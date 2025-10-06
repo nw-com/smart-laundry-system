@@ -136,9 +136,12 @@
                                 <option value="customer">顧客</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">大頭照</label>
-                            <input name="avatar" type="file" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"/>
+                        <div class="flex items-center space-x-4">
+                            <img id="avatar-preview" src="https://placehold.co/100x100/e2e8f0/cbd5e0?text=頭像" alt="Avatar Preview" class="w-24 h-24 rounded-full object-cover bg-gray-200">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">大頭照</label>
+                                <input name="avatar" id="avatar-input" type="file" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"/>
+                            </div>
                         </div>
                     </div>
                      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -185,7 +188,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, doc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, collection, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
              apiKey: "AIzaSyBeyVzpxVW2QEMaPXp3QD-pe81qER0qRgg",
@@ -201,7 +204,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             // Display logged-in user's name
             const userName = sessionStorage.getItem('userName');
             if (userName) {
@@ -215,7 +218,10 @@
             const closeModalBtn = document.getElementById('close-modal-btn');
 
             addAccountBtn.addEventListener('click', () => addAccountModal.classList.add('flex'));
-            closeModalBtn.addEventListener('click', () => addAccountModal.classList.remove('flex'));
+            closeModalBtn.addEventListener('click', () => {
+                addAccountModal.classList.remove('flex');
+                resetAvatarPreview();
+            });
 
             sidebarLinks.forEach(link => {
                 link.addEventListener('click', function(event) {
@@ -244,7 +250,13 @@
 
             async function fetchAndRenderUsers() {
                 try {
+                    userListBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">載入中...</td></tr>';
                     const querySnapshot = await getDocs(collection(db, "users"));
+                    if (querySnapshot.empty) {
+                        userListBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">目前沒有任何帳號。</td></tr>';
+                        return;
+                    }
+
                     userListBody.innerHTML = '';
                     querySnapshot.forEach((doc) => {
                         const user = doc.data();
@@ -267,14 +279,38 @@
                 }
             }
             
-            // --- 職稱管理功能 (整合手動排序) ---
-            let jobTitles = ['店長', '正職人員', '兼職人員', '工廠廠長'];
+            // --- 職稱管理功能 (整合 Firestore) ---
+            const settingsDocRef = doc(db, "settings", "jobTitles");
+            let jobTitles = [];
             
             const titleList = document.getElementById('title-list');
             const addTitleBtn = document.getElementById('add-title-btn');
             const newTitleInput = document.getElementById('new-title-input');
 
-            // 渲染職稱列表 (用於設定頁面)
+            async function loadJobTitles() {
+                try {
+                    const docSnap = await getDoc(settingsDocRef);
+                    if (docSnap.exists()) {
+                        jobTitles = docSnap.data().titles || [];
+                    } else {
+                        jobTitles = ['店長', '正職人員', '兼職人員', '工廠廠長'];
+                        await saveJobTitles();
+                    }
+                } catch (error) {
+                    console.error("Error loading job titles:", error);
+                    jobTitles = ['店長', '正職人員', '兼職人員', '工廠廠長']; // Fallback
+                }
+                renderAllTitles();
+            }
+
+            async function saveJobTitles() {
+                try {
+                    await setDoc(settingsDocRef, { titles: jobTitles });
+                } catch (error) {
+                    console.error("Error saving job titles:", error);
+                }
+            }
+
             function renderTitleList() {
                 if (titleList) {
                     titleList.innerHTML = '';
@@ -292,7 +328,6 @@
                 }
             }
 
-            // 渲染職稱下拉選單 (用於新增帳號 Modal)
             function renderTitleDropdown() {
                 const accountTitleSelect = document.querySelector('#add-account-form select[name="title"]');
                 if(accountTitleSelect){
@@ -308,52 +343,64 @@
                 }
             }
             
-            // 統一渲染函式
             function renderAllTitles() {
                 renderTitleList();
                 renderTitleDropdown();
             }
 
             if (addTitleBtn) {
-                addTitleBtn.addEventListener('click', () => {
+                addTitleBtn.addEventListener('click', async () => {
                     const newTitle = newTitleInput.value.trim();
                     if (newTitle && !jobTitles.includes(newTitle)) {
-                        jobTitles.push(newTitle); // TODO: Save to Firestore
+                        jobTitles.push(newTitle);
                         newTitleInput.value = '';
                         renderAllTitles();
+                        await saveJobTitles();
                     }
                 });
             }
 
             if (titleList) {
-                titleList.addEventListener('click', (e) => {
+                titleList.addEventListener('click', async (e) => {
                     if (e.target.closest('button')) {
                         const titleToRemove = e.target.closest('button').dataset.title;
-                        jobTitles = jobTitles.filter(t => t !== titleToRemove); // TODO: Remove from Firestore
+                        jobTitles = jobTitles.filter(t => t !== titleToRemove);
                         renderAllTitles();
+                        await saveJobTitles();
                     }
                 });
                 
-                // 初始化 SortableJS
                 new Sortable(titleList, {
-                    handle: '.drag-handle', // 指定拖曳的控制點
+                    handle: '.drag-handle',
                     animation: 150,
                     ghostClass: 'sortable-ghost',
-                    onEnd: function() {
-                        // 當拖曳結束後，從 DOM 重新讀取順序並更新陣列
-                        const updatedTitles = [];
-                        titleList.querySelectorAll('li span').forEach(span => {
-                            updatedTitles.push(span.textContent);
-                        });
+                    onEnd: async function() {
+                        const updatedTitles = Array.from(titleList.querySelectorAll('li span')).map(span => span.textContent);
                         jobTitles = updatedTitles;
-                        // 重新渲染下拉選單以符合新的順序
                         renderTitleDropdown(); 
-                        // TODO: 將新的 jobTitles 陣列順序儲存到 Firestore
-                        console.log("New title order:", jobTitles);
+                        await saveJobTitles();
                     }
                 });
             }
-            renderAllTitles(); // 初始渲染
+            
+            await loadJobTitles();
+
+            // --- 大頭照預覽功能 ---
+            const avatarInput = document.getElementById('avatar-input');
+            const avatarPreview = document.getElementById('avatar-preview');
+            const defaultAvatarSrc = 'https://placehold.co/100x100/e2e8f0/cbd5e0?text=頭像';
+
+            function resetAvatarPreview() {
+                avatarPreview.src = defaultAvatarSrc;
+                avatarInput.value = ''; // 清除已選檔案
+            }
+
+            avatarInput.addEventListener('change', () => {
+                const file = avatarInput.files[0];
+                if (file) {
+                    avatarPreview.src = URL.createObjectURL(file);
+                }
+            });
 
             // --- 新增帳號表單功能 ---
             const accountForm = document.getElementById('add-account-form');
@@ -361,6 +408,7 @@
 
             accountForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
+                // ... (form submission logic remains the same)
                 const formData = new FormData(accountForm);
                 const data = Object.fromEntries(formData.entries());
                 feedbackElement.textContent = '';
@@ -379,6 +427,8 @@
                 try {
                     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
                     const user = userCredential.user;
+                    // TODO: Here you would upload the avatar image to Firebase Storage and get the URL
+                    // For now, we save without the avatar URL.
                     await setDoc(doc(db, "users", user.uid), {
                         uid: user.uid, email: data.email, role: data.role, name: data.name,
                         title: data.title, phone: data.phone, createdAt: new Date()
@@ -387,7 +437,7 @@
                     feedbackElement.textContent = '帳號已成功建立！';
                     feedbackElement.classList.add('text-green-500');
                     accountForm.reset();
-                    renderAllTitles();
+                    resetAvatarPreview();
                     setTimeout(() => {
                         addAccountModal.classList.remove('flex');
                         feedbackElement.textContent = '';
