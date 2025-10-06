@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>經營者後台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; }
+        /* 固定版面配置 */
+        .main-layout { display: flex; flex-direction: column; height: 100vh; }
+        .main-content { flex-grow: 1; overflow: hidden; }
+        .scrollable-area { overflow-y: auto; height: 100%; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="main-layout">
+        <!-- Header -->
+        <header class="bg-white shadow-md p-4 flex justify-between items-center flex-shrink-0 z-10">
+            <h1 class="text-xl font-bold text-gray-800"><i class="fas fa-user-tie mr-3 text-red-500"></i>經營者後台</h1>
+            <div>
+                <span class="text-gray-600 mr-4">歡迎, Admin</span>
+                <a href="index.html" class="text-red-500 hover:text-red-700"><i class="fas fa-sign-out-alt mr-1"></i>登出</a>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content flex">
+            <!-- Sidebar -->
+            <nav class="w-64 bg-white p-4 flex-shrink-0">
+                <ul class="space-y-2">
+                    <li><a href="#" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg bg-red-100 text-red-700"><i class="fas fa-tachometer-alt w-6"></i><span class="ml-3">總覽</span></a></li>
+                    <li><a href="#" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100"><i class="fas fa-store w-6"></i><span class="ml-3">門市管理</span></a></li>
+                    <li><a href="#" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100"><i class="fas fa-industry w-6"></i><span class="ml-3">工廠管理</span></a></li>
+                    <li><a href="#" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100"><i class="fas fa-chart-line w-6"></i><span class="ml-3">營運報表</span></a></li>
+                    <li><a href="#" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100"><i class="fas fa-users w-6"></i><span class="ml-3">顧客管理</span></a></li>
+                </ul>
+            </nav>
+            
+            <!-- Scrollable Content Area -->
+            <main class="flex-grow p-6 scrollable-area">
+                <h2 class="text-2xl font-bold mb-6">總覽</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Stat Cards -->
+                    <div class="bg-white p-6 rounded-lg shadow"><h3 class="text-gray-500">今日營收</h3><p class="text-3xl font-bold text-red-600">NT$ 12,345</p></div>
+                    <div class="bg-white p-6 rounded-lg shadow"><h3 class="text-gray-500">今日訂單數</h3><p class="text-3xl font-bold">128</p></div>
+                    <div class="bg-white p-6 rounded-lg shadow"><h3 class="text-gray-500">活躍門市</h3><p class="text-3xl font-bold">5 / 5</p></div>
+                    <div class="bg-white p-6 rounded-lg shadow"><h3 class="text-gray-500">待處理衣物</h3><p class="text-3xl font-bold">342 件</p></div>
+                </div>
+                
+                <h2 class="text-2xl font-bold mt-10 mb-6">近期營收趨勢</h2>
+                <div class="bg-white p-6 rounded-lg shadow h-64">
+                    <!-- Chart placeholder -->
+                    <p class="text-gray-400">圖表區域</p>
+                </div>
+                
+                <h2 class="text-2xl font-bold mt-10 mb-6">門市業績排行</h2>
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <!-- Table placeholder -->
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50"><tr><th class="p-4">門市</th><th class="p-4">營收</th><th class="p-4">訂單數</th></tr></thead>
+                        <tbody>
+                            <tr class="border-b"> <td class="p-4">中和店</td> <td class="p-4 text-red-600 font-semibold">NT$ 4,567</td> <td class="p-4">45</td> </tr>
+                            <tr class="border-b"> <td class="p-4">板橋店</td> <td class="p-4">NT$ 3,120</td> <td class="p-4">32</td> </tr>
+                             <tr class="border-b"> <td class="p-4">永和店</td> <td class="p-4">NT$ 2,890</td> <td class="p-4">28</td> </tr>
+                        </tbody>
+                    </table>
+                </div>
+                 <!-- Add more content to test scrolling -->
+                <div class="h-96"></div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>

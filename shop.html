@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>門市 POS 系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; overflow: hidden; }
+        .main-layout { display: flex; flex-direction: column; height: 100vh; }
+        .header { flex-shrink: 0; }
+        .content-wrapper { flex-grow: 1; overflow: hidden; display: flex; }
+        .left-panel, .right-panel { height: 100%; display: flex; flex-direction: column; }
+        .scrollable-area { overflow-y: auto; }
+        .btn-choice.selected { @apply bg-red-600 text-white border-red-600; }
+        .btn-primary { @apply bg-red-600 hover:bg-red-700; }
+        .btn-danger { @apply bg-red-500 hover:bg-red-600; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="main-layout">
+        <!-- Header -->
+        <header class="bg-white shadow-md p-4 flex justify-between items-center header">
+            <h1 class="text-xl font-bold text-gray-800"><i class="fas fa-store mr-3 text-red-500"></i>門市 POS 系統 (中和店)</h1>
+            <div>
+                <span class="text-gray-600 mr-4">店員: 007</span>
+                <a href="index.html" class="text-red-500 hover:text-red-700"><i class="fas fa-sign-out-alt mr-1"></i>登出</a>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="content-wrapper">
+            <!-- Left Panel (Order Creation) -->
+            <div class="w-full md:w-3/5 lg:w-2/3 p-4 left-panel">
+                <div class="bg-white rounded-lg shadow p-6 scrollable-area">
+                    <!-- This is a placeholder. You can integrate the previous POS prototype content here -->
+                    <div class="space-y-6">
+                        <h3 class="text-lg font-semibold text-gray-600">1. 顧客資訊</h3>
+                        <div class="flex items-center space-x-2">
+                             <input type="text" placeholder="輸入顧客手機號碼" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-red-500">
+                             <button class="bg-red-600 text-white px-4 py-2 rounded-lg whitespace-nowrap">搜尋</button>
+                        </div>
+                    </div>
+                    <hr class="my-6">
+                    <div class="space-y-6">
+                        <h3 class="text-lg font-semibold text-gray-600">2. 選擇洗衣項目</h3>
+                         <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">類別</label>
+                            <div class="flex flex-wrap gap-2">
+                                <button class="btn-choice selected" data-value="上衣">上衣</button>
+                                <button class="btn-choice" data-value="褲子">褲子</button>
+                                <button class="btn-choice" data-value="外套">外套</button>
+                                <button class="btn-choice" data-value="其他">其他</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">品項</label>
+                            <div class="flex flex-wrap gap-2 min-h-[44px] bg-gray-50 p-2 rounded-lg">
+                                 <button class="btn-choice selected" data-value="襯衫">襯衫 ($80)</button>
+                                 <button class="btn-choice" data-value="T-恤">T-恤 ($60)</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel (Order Summary) -->
+            <div class="w-full md:w-2/5 lg:w-1/3 p-4 right-panel bg-white">
+                <div class="flex-shrink-0">
+                    <h2 class="text-2xl font-bold mb-4 border-b pb-3 text-gray-700">訂單摘要</h2>
+                </div>
+                <div class="scrollable-area flex-grow mb-4">
+                    <!-- Order items list -->
+                     <div class="p-2 rounded-lg flex items-start justify-between bg-gray-50">
+                        <div>
+                            <p class="font-semibold text-gray-800">襯衫 <span class="text-sm text-gray-500">x2</span></p>
+                            <p class="text-sm text-red-500">乾洗</p>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                           <span class="font-bold text-gray-700">NT$ 220</span>
+                           <button class="text-red-500"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="border-t pt-4 flex-shrink-0">
+                    <div class="flex justify-between text-2xl font-bold text-gray-800">
+                        <span>總計</span><span>NT$ 220</span>
+                    </div>
+                    <button class="w-full bg-red-600 text-white font-bold py-3 mt-4 rounded-lg">結帳</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

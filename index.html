@@ -1,13 +1,142 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>nwcom-check-in-2025</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智慧洗衣系統 - 登入</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', 'Noto Sans TC', sans-serif; }
+        .login-card {
+            background-color: white; padding: 2.5rem; border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 90%; max-width: 450px;
+        }
+        .role-btn { @apply w-full text-left p-4 border-2 border-gray-200 rounded-lg flex items-center justify-between transition-all duration-300; }
+        .role-btn.selected { @apply border-red-500 bg-red-50 ring-2 ring-red-200; }
+        .role-btn.selected .fa-circle { @apply text-red-500; }
+        .btn-primary { @apply w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 disabled:bg-gray-400; }
+        .input-field { @apply w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500; }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+
+    <div class="login-card">
+        <div class="text-center">
+            <i class="fas fa-tshirt text-5xl text-red-500 mb-4"></i>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">智慧洗衣系統</h1>
+            <p class="text-gray-500 mb-6">請選擇角色並登入</p>
+        </div>
+
+        <div class="space-y-4 mb-6" id="role-selection">
+             <!-- Role buttons from previous version -->
+            <button class="role-btn" data-role="admin"><span><i class="fas fa-user-tie mr-3"></i>經營者</span><i class="far fa-circle text-gray-300"></i></button>
+            <button class="role-btn" data-role="shop"><span><i class="fas fa-store mr-3"></i>店家</span><i class="far fa-circle text-gray-300"></i></button>
+            <button class="role-btn" data-role="factory"><span><i class="fas fa-industry mr-3"></i>工廠</span><i class="far fa-circle text-gray-300"></i></button>
+            <button class="role-btn" data-role="customer"><span><i class="fas fa-user mr-3"></i>顧客</span><i class="far fa-circle text-gray-300"></i></button>
+        </div>
+        
+        <div class="space-y-4 mb-6">
+             <input type="email" id="email-input" placeholder="電子郵件" class="input-field">
+             <input type="password" id="password-input" placeholder="密碼" class="input-field">
+        </div>
+        
+        <p id="error-message" class="text-red-500 text-sm text-center mb-4 h-5"></p>
+
+        <button id="login-btn" class="btn-primary" disabled>登入</button>
+    </div>
+
+    <script type="module">
+        // 匯入 Firebase SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        // TODO: 1. 請將從 Firebase 控制台複製的設定貼到此處
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // 2. 初始化 Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        
+        const roleSelectionContainer = document.getElementById('role-selection');
+        const loginBtn = document.getElementById('login-btn');
+        const emailInput = document.getElementById('email-input');
+        const passwordInput = document.getElementById('password-input');
+        const errorMessage = document.getElementById('error-message');
+        
+        let selectedRole = null;
+
+        function checkFormState() {
+            if (selectedRole && emailInput.value && passwordInput.value) {
+                loginBtn.disabled = false;
+            } else {
+                loginBtn.disabled = true;
+            }
+        }
+
+        roleSelectionContainer.addEventListener('click', (e) => {
+            const button = e.target.closest('.role-btn');
+            if (!button) return;
+
+            document.querySelectorAll('.role-btn').forEach(btn => {
+                btn.classList.remove('selected');
+                btn.querySelector('.fa-circle').classList.replace('fa-check-circle', 'fa-circle');
+            });
+
+            button.classList.add('selected');
+            button.querySelector('i:last-child').classList.replace('fa-circle', 'fa-check-circle');
+            
+            selectedRole = button.dataset.role;
+            checkFormState();
+        });
+
+        emailInput.addEventListener('input', checkFormState);
+        passwordInput.addEventListener('input', checkFormState);
+
+        loginBtn.addEventListener('click', () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            errorMessage.textContent = '';
+
+            if (!selectedRole) {
+                errorMessage.textContent = '請先選擇一個角色';
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 登入中...';
+
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    // 登入成功
+                    console.log("登入成功:", userCredential.user);
+
+                    // 專業提示：在一個真實的系統中，您應該在登入後
+                    // 從 Firestore 資料庫讀取該使用者的角色，而不是依賴前端的選擇。
+                    // 這樣更安全。此處為雛形，我們先直接跳轉。
+                    window.location.href = `${selectedRole}.html`;
+                })
+                .catch((error) => {
+                    console.error("登入失敗:", error.code, error.message);
+                    if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                        errorMessage.textContent = '帳號或密碼錯誤。';
+                    } else {
+                        errorMessage.textContent = '登入時發生未知錯誤。';
+                    }
+                })
+                .finally(() => {
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = '登入';
+                });
+        });
+    </script>
+
+</body>
 </html>
