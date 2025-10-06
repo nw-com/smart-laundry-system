@@ -8,10 +8,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Inter', 'Noto Sans TC', sans-serif; }
-        /* 固定版面配置 */
         .main-layout { display: flex; flex-direction: column; height: 100vh; }
         .main-content { flex-grow: 1; overflow: hidden; }
         .scrollable-area { overflow-y: auto; height: 100%; }
+        .sidebar-link.active { @apply bg-red-100 text-red-700; }
+        .content-panel { display: none; }
+        .content-panel.active { display: block; }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -20,8 +22,8 @@
         <header class="bg-white shadow-md p-4 flex justify-between items-center flex-shrink-0 z-10">
             <h1 class="text-xl font-bold text-gray-800"><i class="fas fa-user-tie mr-3 text-red-500"></i>經營者後台</h1>
             <div>
-                <span class="text-gray-600 mr-4">歡迎, Admin</span>
-                <a href="index.html" class="text-red-500 hover:text-red-700"><i class="fas fa-sign-out-alt mr-1"></i>登出</a>
+                <span id="user-display" class="text-gray-600 mr-4">歡迎, Admin</span>
+                <a href="./index.html" class="text-red-500 hover:text-red-700"><i class="fas fa-sign-out-alt mr-1"></i>登出</a>
             </div>
         </header>
 
@@ -30,47 +32,136 @@
             <!-- Sidebar -->
             <nav class="w-64 bg-white p-4 flex-shrink-0">
                 <ul class="space-y-2">
-                    <li><a href="#" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg bg-red-100 text-red-700"><i class="fas fa-tachometer-alt w-6"></i><span class="ml-3">總覽</span></a></li>
-                    <li><a href="#" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100"><i class="fas fa-store w-6"></i><span class="ml-3">門市管理</span></a></li>
-                    <li><a href="#" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100"><i class="fas fa-industry w-6"></i><span class="ml-3">工廠管理</span></a></li>
-                    <li><a href="#" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100"><i class="fas fa-chart-line w-6"></i><span class="ml-3">營運報表</span></a></li>
-                    <li><a href="#" class="flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100"><i class="fas fa-users w-6"></i><span class="ml-3">顧客管理</span></a></li>
+                    <li><a href="#" class="sidebar-link flex items-center p-2 text-base font-normal text-gray-900 rounded-lg active" data-target="dashboard"><i class="fas fa-tachometer-alt w-6"></i><span class="ml-3">總覽</span></a></li>
+                    <li><a href="#" class="sidebar-link flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100" data-target="accounts"><i class="fas fa-id-card w-6"></i><span class="ml-3">帳號管理</span></a></li>
+                    <li><a href="#" class="sidebar-link flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100" data-target="stores"><i class="fas fa-store w-6"></i><span class="ml-3">門市管理</span></a></li>
+                    <li><a href="#" class="sidebar-link flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100" data-target="factories"><i class="fas fa-industry w-6"></i><span class="ml-3">工廠管理</span></a></li>
+                    <li><a href="#" class="sidebar-link flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100" data-target="reports"><i class="fas fa-chart-line w-6"></i><span class="ml-3">營運報表</span></a></li>
+                    <li><a href="#" class="sidebar-link flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100" data-target="customers"><i class="fas fa-users w-6"></i><span class="ml-3">顧客管理</span></a></li>
                 </ul>
             </nav>
             
             <!-- Scrollable Content Area -->
-            <main class="flex-grow p-6 scrollable-area">
-                <h2 class="text-2xl font-bold mb-6">總覽</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <!-- Stat Cards -->
-                    <div class="bg-white p-6 rounded-lg shadow"><h3 class="text-gray-500">今日營收</h3><p class="text-3xl font-bold text-red-600">NT$ 12,345</p></div>
-                    <div class="bg-white p-6 rounded-lg shadow"><h3 class="text-gray-500">今日訂單數</h3><p class="text-3xl font-bold">128</p></div>
-                    <div class="bg-white p-6 rounded-lg shadow"><h3 class="text-gray-500">活躍門市</h3><p class="text-3xl font-bold">5 / 5</p></div>
-                    <div class="bg-white p-6 rounded-lg shadow"><h3 class="text-gray-500">待處理衣物</h3><p class="text-3xl font-bold">342 件</p></div>
-                </div>
+            <div class="flex-grow scrollable-area p-6">
+                <!-- Dashboard Content -->
+                <main id="dashboard" class="content-panel active">
+                    <h2 class="text-2xl font-bold mb-6">總覽</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="bg-white p-6 rounded-lg shadow"><h3 class="text-gray-500">今日營收</h3><p class="text-3xl font-bold text-red-600">NT$ 12,345</p></div>
+                        <div class="bg-white p-6 rounded-lg shadow"><h3 class="text-gray-500">今日訂單數</h3><p class="text-3xl font-bold">128</p></div>
+                        <div class="bg-white p-6 rounded-lg shadow"><h3 class="text-gray-500">活躍門市</h3><p class="text-3xl font-bold">5 / 5</p></div>
+                        <div class="bg-white p-6 rounded-lg shadow"><h3 class="text-gray-500">待處理衣物</h3><p class="text-3xl font-bold">342 件</p></div>
+                    </div>
+                    <h2 class="text-2xl font-bold mt-10 mb-6">近期營收趨勢</h2>
+                    <div class="bg-white p-6 rounded-lg shadow h-64"><p class="text-gray-400">圖表區域</p></div>
+                    <h2 class="text-2xl font-bold mt-10 mb-6">門市業績排行</h2>
+                    <div class="bg-white rounded-lg shadow overflow-hidden">
+                        <table class="w-full text-left">
+                            <thead class="bg-gray-50"><tr><th class="p-4">門市</th><th class="p-4">營收</th><th class="p-4">訂單數</th></tr></thead>
+                            <tbody>
+                                <tr class="border-b"> <td class="p-4">中和店</td> <td class="p-4 text-red-600 font-semibold">NT$ 4,567</td> <td class="p-4">45</td> </tr>
+                                <tr class="border-b"> <td class="p-4">板橋店</td> <td class="p-4">NT$ 3,120</td> <td class="p-4">32</td> </tr>
+                                <tr class="border-b"> <td class="p-4">永和店</td> <td class="p-4">NT$ 2,890</td> <td class="p-4">28</td> </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </main>
+
+                <!-- Account Management Content -->
+                <main id="accounts" class="content-panel">
+                    <h2 class="text-2xl font-bold mb-6">帳號管理</h2>
+                    <div class="bg-white p-8 rounded-lg shadow-md max-w-4xl mx-auto">
+                        <h3 class="text-xl font-semibold mb-6 border-b pb-4">新增登入帳號</h3>
+                        <form class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">角色</label>
+                                    <select class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
+                                        <option>-- 請選擇角色 --</option>
+                                        <option value="admin">經營者</option>
+                                        <option value="shop-manager">店家(主管)</option>
+                                        <option value="shop-staff">店家(員工)</option>
+                                        <option value="factory">工廠</option>
+                                        <option value="customer">顧客</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">大頭照</label>
+                                    <input type="file" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"/>
+                                </div>
+                            </div>
+                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
+                                    <input type="text" placeholder="請輸入姓名" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">職稱</label>
+                                    <input type="text" placeholder="例如: 店長、正職人員" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
+                                </div>
+                            </div>
+                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">手機號碼</label>
+                                    <input type="tel" placeholder="請輸入手機號碼" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">電子郵件 (登入帳號)</label>
+                                    <input type="email" placeholder="請輸入電子郵件" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
+                                </div>
+                            </div>
+                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">密碼</label>
+                                    <input type="password" placeholder="請設定密碼" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">確認密碼</label>
+                                    <input type="password" placeholder="請再次輸入密碼" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
+                                </div>
+                            </div>
+                            <div class="text-right pt-4">
+                                <button type="submit" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 transition-colors">儲存帳號</button>
+                            </div>
+                        </form>
+                    </div>
+                </main>
                 
-                <h2 class="text-2xl font-bold mt-10 mb-6">近期營收趨勢</h2>
-                <div class="bg-white p-6 rounded-lg shadow h-64">
-                    <!-- Chart placeholder -->
-                    <p class="text-gray-400">圖表區域</p>
-                </div>
-                
-                <h2 class="text-2xl font-bold mt-10 mb-6">門市業績排行</h2>
-                <div class="bg-white rounded-lg shadow overflow-hidden">
-                    <!-- Table placeholder -->
-                    <table class="w-full text-left">
-                        <thead class="bg-gray-50"><tr><th class="p-4">門市</th><th class="p-4">營收</th><th class="p-4">訂單數</th></tr></thead>
-                        <tbody>
-                            <tr class="border-b"> <td class="p-4">中和店</td> <td class="p-4 text-red-600 font-semibold">NT$ 4,567</td> <td class="p-4">45</td> </tr>
-                            <tr class="border-b"> <td class="p-4">板橋店</td> <td class="p-4">NT$ 3,120</td> <td class="p-4">32</td> </tr>
-                             <tr class="border-b"> <td class="p-4">永和店</td> <td class="p-4">NT$ 2,890</td> <td class="p-4">28</td> </tr>
-                        </tbody>
-                    </table>
-                </div>
-                 <!-- Add more content to test scrolling -->
-                <div class="h-96"></div>
-            </main>
+                <!-- Other content panels placeholders -->
+                <main id="stores" class="content-panel"><h2 class="text-2xl font-bold mb-6">門市管理</h2></main>
+                <main id="factories" class="content-panel"><h2 class="text-2xl font-bold mb-6">工廠管理</h2></main>
+                <main id="reports" class="content-panel"><h2 class="text-2xl font-bold mb-6">營運報表</h2></main>
+                <main id="customers" class="content-panel"><h2 class="text-2xl font-bold mb-6">顧客管理</h2></main>
+            </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            const contentPanels = document.querySelectorAll('.content-panel');
+
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    
+                    const targetId = this.dataset.target;
+
+                    // Update active link
+                    sidebarLinks.forEach(innerLink => innerLink.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Update active content panel
+                    contentPanels.forEach(panel => {
+                        if (panel.id === targetId) {
+                            panel.classList.add('active');
+                        } else {
+                            panel.classList.remove('active');
+                        }
+                    });
+                });
+            });
+        });
+    </script>
 </body>
 </html>
