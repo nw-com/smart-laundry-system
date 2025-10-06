@@ -22,6 +22,18 @@
             background: #f0f0f0;
             opacity: 0.6;
         }
+        .sortable-header {
+            cursor: pointer;
+            user-select: none;
+        }
+         .sortable-header .sort-icon {
+            opacity: 0.3;
+        }
+        .sortable-header.sort-asc .fa-sort-up,
+        .sortable-header.sort-desc .fa-sort-down {
+            opacity: 1;
+            color: #ef4444; /* red-500 */
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -75,8 +87,12 @@
                         <table class="w-full text-left">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="p-4 whitespace-nowrap">姓名</th>
-                                    <th class="p-4 whitespace-nowrap">電子郵件</th>
+                                    <th class="p-4 whitespace-nowrap sortable-header" data-sort="name">
+                                        姓名 <span class="sort-icon"><i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i></span>
+                                    </th>
+                                    <th class="p-4 whitespace-nowrap sortable-header" data-sort="email">
+                                        電子郵件 <span class="sort-icon"><i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i></span>
+                                    </th>
                                     <th class="p-4 whitespace-nowrap">角色</th>
                                     <th class="p-4 whitespace-nowrap">職稱</th>
                                     <th class="p-4 whitespace-nowrap">操作</th>
@@ -114,15 +130,16 @@
         </div>
     </div>
 
-    <!-- Add Account Modal -->
-    <div id="add-account-modal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 items-center justify-center z-50">
+    <!-- Add/Edit Account Modal (repurposed) -->
+    <div id="account-modal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 items-center justify-center z-50">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
             <div class="p-4 border-b flex justify-between items-center">
-                <h3 class="text-xl font-semibold">新增登入帳號</h3>
+                <h3 id="modal-title" class="text-xl font-semibold">新增登入帳號</h3>
                 <button id="close-modal-btn" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
             <div class="p-8 overflow-y-auto">
-                <form id="add-account-form" class="space-y-6">
+                <form id="account-form" class="space-y-6">
+                    <input type="hidden" name="uid">
                      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">角色</label>
@@ -169,29 +186,46 @@
                      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">密碼</label>
-                            <input name="password" type="password" placeholder="請設定密碼" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500" required>
+                            <input name="password" type="password" placeholder="留空表示不變更" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">確認密碼</label>
-                            <input name="confirmPassword" type="password" placeholder="請再次輸入密碼" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500" required>
+                            <input name="confirmPassword" type="password" placeholder="留空表示不變更" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
                         </div>
                     </div>
                      <p id="account-feedback" class="text-sm text-center h-5 my-2"></p>
                     <div class="text-right pt-4">
-                        <button type="submit" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 transition-colors">儲存帳號</button>
+                        <button type="submit" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 transition-colors">儲存</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-sm">
+            <div class="p-6 text-center">
+                <i class="fas fa-exclamation-triangle text-4xl text-yellow-400 mb-4"></i>
+                <h3 id="confirm-title" class="text-lg font-semibold mb-2">確定要刪除嗎？</h3>
+                <p id="confirm-text" class="text-sm text-gray-600 mb-6">此操作無法復原。</p>
+                <div class="flex justify-center space-x-4">
+                    <button id="confirm-cancel-btn" class="py-2 px-4 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">取消</button>
+                    <button id="confirm-action-btn" class="py-2 px-4 bg-red-600 text-white rounded-lg hover:bg-red-700">確定刪除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, doc, setDoc, collection, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, collection, getDocs, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
         const firebaseConfig = {
-             apiKey: "AIzaSyBeyVzpxVW2QEMaPXp3QD-pe81qER0qRgg",
+            apiKey: "AIzaSyBeyVzpxVW2QEMaPXp3QD-pe81qER0qRgg",
             authDomain: "smart-laundry-system-bef41.firebaseapp.com",
             projectId: "smart-laundry-system-bef41",
             storageBucket: "smart-laundry-system-bef41.appspot.com",
@@ -203,218 +237,174 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        const storage = getStorage(app);
 
         document.addEventListener('DOMContentLoaded', async function() {
-            // Display logged-in user's name
-            const userName = sessionStorage.getItem('userName');
-            if (userName) {
-                document.getElementById('user-display').textContent = `歡迎, ${userName}`;
-            }
+            let allUsers = [];
+            let currentSort = { column: 'name', direction: 'asc' };
+            let jobTitles = [];
 
+            // DOM Elements
+            const userDisplay = document.getElementById('user-display');
             const sidebarLinks = document.querySelectorAll('.sidebar-link');
             const contentPanels = document.querySelectorAll('.content-panel');
-            const addAccountModal = document.getElementById('add-account-modal');
+            const accountModal = document.getElementById('account-modal');
             const addAccountBtn = document.getElementById('add-account-btn');
             const closeModalBtn = document.getElementById('close-modal-btn');
+            const userListBody = document.getElementById('user-list-body');
+            const titleList = document.getElementById('title-list');
+            const addTitleBtn = document.getElementById('add-title-btn');
+            const newTitleInput = document.getElementById('new-title-input');
+            const accountForm = document.getElementById('account-form');
+            const feedbackElement = document.getElementById('account-feedback');
+            const avatarInput = document.getElementById('avatar-input');
+            const avatarPreview = document.getElementById('avatar-preview');
+            const modalTitle = document.getElementById('modal-title');
+            const confirmationModal = document.getElementById('confirmation-modal');
 
-            addAccountBtn.addEventListener('click', () => addAccountModal.classList.add('flex'));
-            closeModalBtn.addEventListener('click', () => {
-                addAccountModal.classList.remove('flex');
-                resetAvatarPreview();
-            });
+            // --- FIXED: Variable declarations moved up ---
+            const roleMapping = { 'admin': '經營者', 'shop-manager': '店家(主管)', 'shop-staff': '店家(員工)', 'shop-auto': '店家(自助)', 'factory': '工廠', 'customer': '顧客' };
+            const settingsDocRef = doc(db, "settings", "jobTitles");
+
+
+            // --- Initial Setup ---
+            const userName = sessionStorage.getItem('userName');
+            if (userName) userDisplay.textContent = `歡迎, ${userName}`;
+            
+            await loadJobTitles();
+            await fetchAndRenderUsers();
+
+            // --- Event Listeners ---
+            addAccountBtn.addEventListener('click', () => openAccountModal('add'));
+            closeModalBtn.addEventListener('click', closeAccountModal);
 
             sidebarLinks.forEach(link => {
-                link.addEventListener('click', function(event) {
-                    event.preventDefault();
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
                     const targetId = this.dataset.target;
-                    sidebarLinks.forEach(innerLink => innerLink.classList.remove('active'));
+                    sidebarLinks.forEach(l => l.classList.remove('active'));
                     this.classList.add('active');
-                    contentPanels.forEach(panel => {
-                        panel.id === targetId ? panel.classList.add('active') : panel.classList.remove('active');
-                    });
-                    if (targetId === 'accounts') {
-                        fetchAndRenderUsers();
+                    contentPanels.forEach(p => p.classList.toggle('active', p.id === targetId));
+                    if (targetId === 'accounts') fetchAndRenderUsers();
+                });
+            });
+            
+            accountForm.addEventListener('submit', handleAccountFormSubmit);
+            avatarInput.addEventListener('change', handleAvatarChange);
+
+            // --- Account List Sorting ---
+            document.querySelectorAll('.sortable-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const column = header.dataset.sort;
+                    if (currentSort.column === column) {
+                        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        currentSort.column = column;
+                        currentSort.direction = 'asc';
                     }
+                    sortAndRenderUsers();
                 });
             });
 
-            const userListBody = document.getElementById('user-list-body');
-            const roleMapping = {
-                'admin': '經營者',
-                'shop-manager': '店家(主管)',
-                'shop-staff': '店家(員工)',
-                'shop-auto': '店家(自助)',
-                'factory': '工廠',
-                'customer': '顧客'
-            };
-
+            // --- User Management (CRUD) ---
             async function fetchAndRenderUsers() {
                 try {
                     userListBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">載入中...</td></tr>';
                     const querySnapshot = await getDocs(collection(db, "users"));
-                    if (querySnapshot.empty) {
-                        userListBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">目前沒有任何帳號。</td></tr>';
-                        return;
-                    }
-
-                    userListBody.innerHTML = '';
-                    querySnapshot.forEach((doc) => {
-                        const user = doc.data();
-                        const tr = document.createElement('tr');
-                        tr.className = 'border-b';
-                        tr.innerHTML = `
-                            <td class="p-4">${user.name}</td>
-                            <td class="p-4">${user.email}</td>
-                            <td class="p-4">${roleMapping[user.role] || user.role}</td>
-                            <td class="p-4">${user.title}</td>
-                            <td class="p-4">
-                                <button class="text-gray-400 hover:text-red-500"><i class="fas fa-trash"></i></button>
-                            </td>
-                        `;
-                        userListBody.appendChild(tr);
-                    });
+                    allUsers = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    sortAndRenderUsers();
                 } catch (error) {
                     console.error("Error fetching users: ", error);
                     userListBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-500">無法載入使用者列表。</td></tr>';
                 }
             }
-            
-            // --- 職稱管理功能 (整合 Firestore) ---
-            const settingsDocRef = doc(db, "settings", "jobTitles");
-            let jobTitles = [];
-            
-            const titleList = document.getElementById('title-list');
-            const addTitleBtn = document.getElementById('add-title-btn');
-            const newTitleInput = document.getElementById('new-title-input');
 
-            async function loadJobTitles() {
-                try {
-                    const docSnap = await getDoc(settingsDocRef);
-                    if (docSnap.exists()) {
-                        jobTitles = docSnap.data().titles || [];
-                    } else {
-                        jobTitles = ['店長', '正職人員', '兼職人員', '工廠廠長'];
-                        await saveJobTitles();
-                    }
-                } catch (error) {
-                    console.error("Error loading job titles:", error);
-                    jobTitles = ['店長', '正職人員', '兼職人員', '工廠廠長']; // Fallback
-                }
-                renderAllTitles();
-            }
-
-            async function saveJobTitles() {
-                try {
-                    await setDoc(settingsDocRef, { titles: jobTitles });
-                } catch (error) {
-                    console.error("Error saving job titles:", error);
-                }
-            }
-
-            function renderTitleList() {
-                if (titleList) {
-                    titleList.innerHTML = '';
-                    jobTitles.forEach(title => {
-                        const li = document.createElement('li');
-                        li.className = 'flex justify-between items-center bg-gray-50 p-3 rounded-md';
-                        li.innerHTML = `
-                            <div class="flex items-center">
-                                <i class="fas fa-grip-vertical mr-3 text-gray-400 cursor-move drag-handle"></i>
-                                <span>${title}</span>
-                            </div>
-                            <button class="text-gray-400 hover:text-red-500" data-title="${title}"><i class="fas fa-trash"></i></button>`;
-                        titleList.appendChild(li);
-                    });
-                }
-            }
-
-            function renderTitleDropdown() {
-                const accountTitleSelect = document.querySelector('#add-account-form select[name="title"]');
-                if(accountTitleSelect){
-                    const firstOption = accountTitleSelect.querySelector('option');
-                    accountTitleSelect.innerHTML = '';
-                    if (firstOption) accountTitleSelect.appendChild(firstOption);
-                    jobTitles.forEach(title => {
-                        const option = document.createElement('option');
-                        option.value = title;
-                        option.textContent = title;
-                        accountTitleSelect.appendChild(option);
-                    });
-                }
-            }
-            
-            function renderAllTitles() {
-                renderTitleList();
-                renderTitleDropdown();
-            }
-
-            if (addTitleBtn) {
-                addTitleBtn.addEventListener('click', async () => {
-                    const newTitle = newTitleInput.value.trim();
-                    if (newTitle && !jobTitles.includes(newTitle)) {
-                        jobTitles.push(newTitle);
-                        newTitleInput.value = '';
-                        renderAllTitles();
-                        await saveJobTitles();
-                    }
+            function sortAndRenderUsers() {
+                allUsers.sort((a, b) => {
+                    const valA = a[currentSort.column] || '';
+                    const valB = b[currentSort.column] || '';
+                    if (valA < valB) return currentSort.direction === 'asc' ? -1 : 1;
+                    if (valA > valB) return currentSort.direction === 'asc' ? 1 : -1;
+                    return 0;
                 });
+                renderUserList();
+                updateSortHeaders();
             }
-
-            if (titleList) {
-                titleList.addEventListener('click', async (e) => {
-                    if (e.target.closest('button')) {
-                        const titleToRemove = e.target.closest('button').dataset.title;
-                        jobTitles = jobTitles.filter(t => t !== titleToRemove);
-                        renderAllTitles();
-                        await saveJobTitles();
-                    }
-                });
-                
-                new Sortable(titleList, {
-                    handle: '.drag-handle',
-                    animation: 150,
-                    ghostClass: 'sortable-ghost',
-                    onEnd: async function() {
-                        const updatedTitles = Array.from(titleList.querySelectorAll('li span')).map(span => span.textContent);
-                        jobTitles = updatedTitles;
-                        renderTitleDropdown(); 
-                        await saveJobTitles();
-                    }
+            
+            function renderUserList() {
+                if (allUsers.length === 0) {
+                    userListBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">目前沒有任何帳號。</td></tr>';
+                    return;
+                }
+                userListBody.innerHTML = '';
+                allUsers.forEach(user => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b';
+                    tr.innerHTML = `
+                        <td class="p-4">${user.name || ''}</td>
+                        <td class="p-4">${user.email || ''}</td>
+                        <td class="p-4">${roleMapping[user.role] || user.role}</td>
+                        <td class="p-4">${user.title || ''}</td>
+                        <td class="p-4 space-x-4">
+                            <button class="text-gray-400 hover:text-blue-500 edit-btn" data-uid="${user.uid}"><i class="fas fa-edit"></i></button>
+                            <button class="text-gray-400 hover:text-red-500 delete-btn" data-uid="${user.uid}" data-name="${user.name}"><i class="fas fa-trash"></i></button>
+                        </td>`;
+                    userListBody.appendChild(tr);
                 });
             }
             
-            await loadJobTitles();
-
-            // --- 大頭照預覽功能 ---
-            const avatarInput = document.getElementById('avatar-input');
-            const avatarPreview = document.getElementById('avatar-preview');
-            const defaultAvatarSrc = 'https://placehold.co/100x100/e2e8f0/cbd5e0?text=頭像';
-
-            function resetAvatarPreview() {
-                avatarPreview.src = defaultAvatarSrc;
-                avatarInput.value = ''; // 清除已選檔案
-            }
-
-            avatarInput.addEventListener('change', () => {
-                const file = avatarInput.files[0];
-                if (file) {
-                    avatarPreview.src = URL.createObjectURL(file);
-                }
+            userListBody.addEventListener('click', e => {
+                const editBtn = e.target.closest('.edit-btn');
+                const deleteBtn = e.target.closest('.delete-btn');
+                if (editBtn) openAccountModal('edit', editBtn.dataset.uid);
+                if (deleteBtn) handleDeleteUser(deleteBtn.dataset.uid, deleteBtn.dataset.name);
             });
 
-            // --- 新增帳號表單功能 ---
-            const accountForm = document.getElementById('add-account-form');
-            const feedbackElement = document.getElementById('account-feedback');
+            function updateSortHeaders() {
+                document.querySelectorAll('.sortable-header').forEach(header => {
+                    header.classList.remove('sort-asc', 'sort-desc');
+                    if (header.dataset.sort === currentSort.column) {
+                        header.classList.add(currentSort.direction === 'asc' ? 'sort-asc' : 'sort-desc');
+                    }
+                });
+            }
+            
+            // --- Account Modal & Form ---
+            async function openAccountModal(mode, uid = null) {
+                accountForm.reset();
+                resetAvatarPreview();
+                feedbackElement.textContent = '';
+                accountForm.querySelector('input[name="password"]').required = (mode === 'add');
+                accountForm.querySelector('input[name="email"]').disabled = (mode === 'edit');
+                
+                if (mode === 'edit') {
+                    modalTitle.textContent = '編輯帳號';
+                    const user = allUsers.find(u => u.uid === uid);
+                    if (!user) return;
+                    // Populate form
+                    Object.keys(user).forEach(key => {
+                        const input = accountForm.querySelector(`[name="${key}"]`);
+                        if (input) input.value = user[key];
+                    });
+                    if (user.avatarUrl) avatarPreview.src = user.avatarUrl;
+                } else {
+                    modalTitle.textContent = '新增帳號';
+                }
+                accountModal.classList.add('flex');
+            }
 
-            accountForm.addEventListener('submit', async (e) => {
+            function closeAccountModal() {
+                accountModal.classList.remove('flex');
+            }
+
+            async function handleAccountFormSubmit(e) {
                 e.preventDefault();
-                // ... (form submission logic remains the same)
                 const formData = new FormData(accountForm);
                 const data = Object.fromEntries(formData.entries());
+                const isEditMode = !!data.uid;
+                
                 feedbackElement.textContent = '';
-                feedbackElement.classList.remove('text-red-500', 'text-green-500');
-
-                if (data.password !== data.confirmPassword) {
+                if (data.password && data.password !== data.confirmPassword) {
                     feedbackElement.textContent = '錯誤：兩次輸入的密碼不一致。';
                     feedbackElement.classList.add('text-red-500');
                     return;
@@ -425,39 +415,202 @@
                 submitButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 儲存中...`;
 
                 try {
-                    const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-                    const user = userCredential.user;
-                    // TODO: Here you would upload the avatar image to Firebase Storage and get the URL
-                    // For now, we save without the avatar URL.
-                    await setDoc(doc(db, "users", user.uid), {
-                        uid: user.uid, email: data.email, role: data.role, name: data.name,
-                        title: data.title, phone: data.phone, createdAt: new Date()
-                    });
+                    if (isEditMode) {
+                        // Update user
+                        const userRef = doc(db, "users", data.uid);
+                        const updateData = { name: data.name, role: data.role, title: data.title, phone: data.phone };
+                        if (avatarInput.files[0]) {
+                            const file = avatarInput.files[0];
+                            const storageRef = ref(storage, `avatars/${data.uid}`);
+                            await uploadBytes(storageRef, file);
+                            updateData.avatarUrl = await getDownloadURL(storageRef);
+                        }
+                        await updateDoc(userRef, updateData);
+                        // NOTE: Updating email/password requires re-authentication or a backend function.
+                    } else {
+                        // Create user
+                        const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+                        const user = userCredential.user;
+                        const userData = { uid: user.uid, email: data.email, role: data.role, name: data.name, title: data.title, phone: data.phone, createdAt: new Date() };
+                        if (avatarInput.files[0]) {
+                            const file = avatarInput.files[0];
+                            const storageRef = ref(storage, `avatars/${user.uid}`);
+                            await uploadBytes(storageRef, file);
+                            userData.avatarUrl = await getDownloadURL(storageRef);
+                        }
+                        await setDoc(doc(db, "users", user.uid), userData);
+                    }
                     
-                    feedbackElement.textContent = '帳號已成功建立！';
+                    feedbackElement.textContent = `帳號已成功${isEditMode ? '更新' : '建立'}！`;
                     feedbackElement.classList.add('text-green-500');
-                    accountForm.reset();
-                    resetAvatarPreview();
                     setTimeout(() => {
-                        addAccountModal.classList.remove('flex');
-                        feedbackElement.textContent = '';
+                        closeAccountModal();
                         fetchAndRenderUsers();
                     }, 1500);
 
                 } catch (error) {
+                    console.error("Account form error:", error);
                     let message = '發生未知錯誤。';
                     if (error.code === 'auth/email-already-in-use') message = '錯誤：此電子郵件已被註冊。';
                     else if (error.code === 'auth/weak-password') message = '錯誤：密碼強度不足，至少需要6個字元。';
-                    else if (error.code === 'auth/invalid-email') message = '錯誤：電子郵件格式不正確。';
                     feedbackElement.textContent = message;
                     feedbackElement.classList.add('text-red-500');
                 } finally {
                      submitButton.disabled = false;
-                     submitButton.textContent = '儲存帳號';
+                     submitButton.textContent = '儲存';
+                }
+            }
+
+            function handleDeleteUser(uid, name) {
+                showConfirmationModal(`確定要刪除 ${name} 的帳號嗎？`, async () => {
+                    try {
+                        await deleteDoc(doc(db, "users", uid));
+                        // IMPORTANT: Deleting a user from Firebase Auth cannot be done from the client-side for security reasons,
+                        // unless it's the currently signed-in user. This should be handled by a Cloud Function.
+                        // The user will be removed from the list, but their auth entry might remain.
+                        fetchAndRenderUsers();
+                    } catch (error) {
+                        console.error("Error deleting user: ", error);
+                    }
+                });
+            }
+
+            // --- Confirmation Modal ---
+            function showConfirmationModal(text, onConfirm) {
+                confirmationModal.querySelector('#confirm-text').textContent = text;
+                confirmationModal.classList.add('flex');
+                
+                const actionBtn = confirmationModal.querySelector('#confirm-action-btn');
+                const cancelBtn = confirmationModal.querySelector('#confirm-cancel-btn');
+
+                const close = () => confirmationModal.classList.remove('flex');
+                
+                actionBtn.onclick = () => {
+                    onConfirm();
+                    close();
+                };
+                cancelBtn.onclick = close;
+            }
+
+            // --- Job Title Management ---
+            async function loadJobTitles() {
+                try {
+                    const docSnap = await getDoc(settingsDocRef);
+                    jobTitles = (docSnap.exists() && docSnap.data().titles) ? docSnap.data().titles : ['店長', '正職人員'];
+                } catch (error) {
+                    console.error("Error loading job titles:", error);
+                    jobTitles = ['店長', '正職人員'];
+                }
+                renderAllTitles();
+            }
+
+            async function saveJobTitles() {
+                await setDoc(settingsDocRef, { titles: jobTitles });
+            }
+
+            function renderTitleList() {
+                if (!titleList) return;
+                titleList.innerHTML = '';
+                jobTitles.forEach((title, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'flex justify-between items-center bg-gray-50 p-3 rounded-md';
+                    li.dataset.index = index;
+                    li.innerHTML = `
+                        <div class="flex items-center">
+                            <i class="fas fa-grip-vertical mr-3 text-gray-400 cursor-move drag-handle"></i>
+                            <span class="title-text">${title}</span>
+                        </div>
+                        <div class="space-x-4">
+                           <button class="text-gray-400 hover:text-blue-500 edit-title-btn"><i class="fas fa-edit"></i></button>
+                           <button class="text-gray-400 hover:text-red-500 delete-title-btn"><i class="fas fa-trash"></i></button>
+                        </div>`;
+                    titleList.appendChild(li);
+                });
+            }
+
+            function renderTitleDropdown() {
+                const select = accountForm.querySelector('select[name="title"]');
+                if (!select) return;
+                select.innerHTML = '<option value="">-- 請選擇職稱 --</option>';
+                jobTitles.forEach(title => {
+                    select.innerHTML += `<option value="${title}">${title}</option>`;
+                });
+            }
+            
+            function renderAllTitles() {
+                renderTitleList();
+                renderTitleDropdown();
+            }
+
+            addTitleBtn.addEventListener('click', async () => {
+                const newTitle = newTitleInput.value.trim();
+                if (newTitle && !jobTitles.includes(newTitle)) {
+                    jobTitles.push(newTitle);
+                    newTitleInput.value = '';
+                    renderAllTitles();
+                    await saveJobTitles();
                 }
             });
-            // Initial fetch
-            fetchAndRenderUsers();
+
+            titleList.addEventListener('click', async e => {
+                const target = e.target;
+                const li = target.closest('li');
+                if (!li) return;
+                const index = parseInt(li.dataset.index, 10);
+                
+                if (target.closest('.delete-title-btn')) {
+                    jobTitles.splice(index, 1);
+                    renderAllTitles();
+                    await saveJobTitles();
+                } else if (target.closest('.edit-title-btn')) {
+                    const span = li.querySelector('.title-text');
+                    const currentText = span.textContent;
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = currentText;
+                    input.className = 'p-1 border rounded-md';
+                    span.replaceWith(input);
+                    input.focus();
+
+                    const saveEdit = async () => {
+                        const newText = input.value.trim();
+                        if (newText && newText !== currentText) {
+                            jobTitles[index] = newText;
+                            await saveJobTitles();
+                        }
+                        renderAllTitles(); // Re-render the whole list to restore span
+                    };
+
+                    input.addEventListener('blur', saveEdit);
+                    input.addEventListener('keydown', e => {
+                        if (e.key === 'Enter') input.blur();
+                        if (e.key === 'Escape') {
+                            input.value = currentText;
+                            input.blur();
+                        }
+                    });
+                }
+            });
+            
+            new Sortable(titleList, {
+                handle: '.drag-handle', animation: 150, ghostClass: 'sortable-ghost',
+                onEnd: async () => {
+                    jobTitles = Array.from(titleList.querySelectorAll('li .title-text')).map(span => span.textContent);
+                    renderTitleDropdown(); 
+                    await saveJobTitles();
+                }
+            });
+            
+            // --- Avatar Preview ---
+            const defaultAvatarSrc = 'https://placehold.co/100x100/e2e8f0/cbd5e0?text=頭像';
+            function resetAvatarPreview() {
+                avatarPreview.src = defaultAvatarSrc;
+                avatarInput.value = '';
+            }
+            function handleAvatarChange() {
+                const file = avatarInput.files[0];
+                if (file) avatarPreview.src = URL.createObjectURL(file);
+            }
         });
     </script>
 </body>
