@@ -38,6 +38,7 @@
                     <li><a href="#" class="sidebar-link flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100" data-target="factories"><i class="fas fa-industry w-6"></i><span class="ml-3">工廠管理</span></a></li>
                     <li><a href="#" class="sidebar-link flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100" data-target="reports"><i class="fas fa-chart-line w-6"></i><span class="ml-3">營運報表</span></a></li>
                     <li><a href="#" class="sidebar-link flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100" data-target="customers"><i class="fas fa-users w-6"></i><span class="ml-3">顧客管理</span></a></li>
+                    <li><a href="#" class="sidebar-link flex items-center p-2 text-base font-normal text-gray-900 rounded-lg hover:bg-gray-100" data-target="settings"><i class="fas fa-cog w-6"></i><span class="ml-3">系統設定</span></a></li>
                 </ul>
             </nav>
             
@@ -81,6 +82,7 @@
                                         <option value="admin">經營者</option>
                                         <option value="shop-manager">店家(主管)</option>
                                         <option value="shop-staff">店家(員工)</option>
+                                        <option value="shop-auto">店家(自助)</option>
                                         <option value="factory">工廠</option>
                                         <option value="customer">顧客</option>
                                     </select>
@@ -97,7 +99,13 @@
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">職稱</label>
-                                    <input type="text" placeholder="例如: 店長、正職人員" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
+                                     <select class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
+                                        <option>-- 請選擇職稱 --</option>
+                                        <option>店長</option>
+                                        <option>正職人員</option>
+                                        <option>兼職人員</option>
+                                        <option>工廠廠長</option>
+                                    </select>
                                 </div>
                             </div>
                              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -132,6 +140,23 @@
                 <main id="factories" class="content-panel"><h2 class="text-2xl font-bold mb-6">工廠管理</h2></main>
                 <main id="reports" class="content-panel"><h2 class="text-2xl font-bold mb-6">營運報表</h2></main>
                 <main id="customers" class="content-panel"><h2 class="text-2xl font-bold mb-6">顧客管理</h2></main>
+                
+                <!-- System Settings Content -->
+                <main id="settings" class="content-panel">
+                    <h2 class="text-2xl font-bold mb-6">系統設定</h2>
+                    <div class="bg-white p-8 rounded-lg shadow-md max-w-2xl mx-auto">
+                        <h3 class="text-xl font-semibold mb-6 border-b pb-4">職稱管理</h3>
+                        <div class="space-y-4">
+                            <div class="flex space-x-2">
+                                <input id="new-title-input" type="text" placeholder="輸入新的職稱" class="flex-grow p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
+                                <button id="add-title-btn" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">新增</button>
+                            </div>
+                            <ul id="title-list" class="space-y-2 pt-4">
+                                <!-- 職稱列表將由 JavaScript 動態生成 -->
+                            </ul>
+                        </div>
+                    </div>
+                </main>
             </div>
         </div>
     </div>
@@ -147,11 +172,9 @@
                     
                     const targetId = this.dataset.target;
 
-                    // Update active link
                     sidebarLinks.forEach(innerLink => innerLink.classList.remove('active'));
                     this.classList.add('active');
                     
-                    // Update active content panel
                     contentPanels.forEach(panel => {
                         if (panel.id === targetId) {
                             panel.classList.add('active');
@@ -161,6 +184,61 @@
                     });
                 });
             });
+
+            // --- 職稱管理功能 ---
+            // 實際應用中，jobTitles 應該從 Firestore 讀取和寫入
+            let jobTitles = ['店長', '正職人員', '兼職人員', '工廠廠長'];
+            
+            const titleList = document.getElementById('title-list');
+            const addTitleBtn = document.getElementById('add-title-btn');
+            const newTitleInput = document.getElementById('new-title-input');
+            const titleSelectInAccounts = document.querySelector('#accounts select'); // 這裡假設帳號管理中的職稱是第一個select
+
+            function renderTitles() {
+                // Render title list in settings
+                titleList.innerHTML = '';
+                jobTitles.forEach(title => {
+                    const li = document.createElement('li');
+                    li.className = 'flex justify-between items-center bg-gray-50 p-3 rounded-md';
+                    li.innerHTML = `<span>${title}</span><button class="text-gray-400 hover:text-red-500" data-title="${title}"><i class="fas fa-trash"></i></button>`;
+                    titleList.appendChild(li);
+                });
+
+                // Render title options in account form
+                const accountTitleSelect = document.querySelector('form select:nth-of-type(2)');
+                if(accountTitleSelect){
+                    const firstOption = accountTitleSelect.querySelector('option');
+                    accountTitleSelect.innerHTML = '';
+                    accountTitleSelect.appendChild(firstOption);
+                    jobTitles.forEach(title => {
+                        const option = document.createElement('option');
+                        option.value = title;
+                        option.textContent = title;
+                        accountTitleSelect.appendChild(option);
+                    });
+                }
+            }
+
+            addTitleBtn.addEventListener('click', () => {
+                const newTitle = newTitleInput.value.trim();
+                if (newTitle && !jobTitles.includes(newTitle)) {
+                    jobTitles.push(newTitle);
+                    newTitleInput.value = '';
+                    renderTitles();
+                    // 在此處加入寫入 Firestore 的程式碼
+                }
+            });
+
+            titleList.addEventListener('click', (e) => {
+                if (e.target.closest('button')) {
+                    const titleToRemove = e.target.closest('button').dataset.title;
+                    jobTitles = jobTitles.filter(t => t !== titleToRemove);
+                    renderTitles();
+                    // 在此處加入從 Firestore 刪除的程式碼
+                }
+            });
+
+            renderTitles();
         });
     </script>
 </body>

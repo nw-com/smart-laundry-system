@@ -13,7 +13,6 @@
             box-shadow: 0 10px 35px rgba(0,0,0,0.1); width: 90%; max-width: 400px;
         }
         .btn-primary { @apply w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 disabled:bg-gray-400; }
-        /* --- 修正後的輸入框樣式 --- */
         .input-field { 
             @apply w-full p-3 border-2 border-gray-300 rounded-lg transition-colors duration-300 focus:outline-none focus:border-red-500; 
         }
@@ -65,7 +64,6 @@
 
 
     <script type="module">
-        // 匯入 Firebase SDK
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         
@@ -79,7 +77,6 @@
             measurementId: "G-FBQ997TMQ3"
         };
         
-        // --- 檢查 Firebase 設定是否已填寫 ---
         if (firebaseConfig.apiKey === "YOUR_API_KEY") {
             document.getElementById('login-container').classList.add('hidden');
             document.getElementById('config-error-container').classList.remove('hidden');
@@ -137,15 +134,24 @@
                 .then((userCredential) => {
                     console.log("登入成功:", userCredential.user);
                     
+                    // 在真實系統中，您應該從 Firestore 查詢該使用者的角色。
+                    // 為了方便測試，您可以手動更改此變數來登入不同角色介面
+                    // 可用角色: 'admin', 'shop-manager', 'shop-staff', 'shop-auto', 'factory', 'customer'
                     const userRole = 'admin'; 
                     
-                    // --- 根據角色進行跳轉 (已修正路徑) ---
+                    // --- 根據角色進行跳轉 (已更新角色) ---
                     switch (userRole) {
                         case 'admin':
                             window.location.href = './admin.html';
                             break;
-                        case 'shop':
-                            window.location.href = './shop.html';
+                        case 'shop-manager':
+                            window.location.href = './shop-manager.html';
+                            break;
+                        case 'shop-staff':
+                            window.location.href = './shop-staff.html';
+                            break;
+                        case 'shop-auto':
+                            window.location.href = './shop-auto.html';
                             break;
                         case 'factory':
                             window.location.href = './factory.html';
