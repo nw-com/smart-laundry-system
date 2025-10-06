@@ -14,6 +14,8 @@
         .sidebar-link.active { @apply bg-red-100 text-red-700; }
         .content-panel { display: none; }
         .content-panel.active { display: block; }
+        .modal { display: none; }
+        .modal.flex { display: flex; }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -22,7 +24,7 @@
         <header class="bg-white shadow-md p-4 flex justify-between items-center flex-shrink-0 z-10">
             <h1 class="text-xl font-bold text-gray-800"><i class="fas fa-user-tie mr-3 text-red-500"></i>經營者後台</h1>
             <div>
-                <span id="user-display" class="text-gray-600 mr-4">歡迎, Admin</span>
+                <span id="user-display" class="text-gray-600 mr-4">歡迎, 載入中...</span>
                 <a href="./index.html" class="text-red-500 hover:text-red-700"><i class="fas fa-sign-out-alt mr-1"></i>登出</a>
             </div>
         </header>
@@ -53,107 +55,110 @@
                         <div class="bg-white p-6 rounded-lg shadow"><h3 class="text-gray-500">活躍門市</h3><p class="text-3xl font-bold">5 / 5</p></div>
                         <div class="bg-white p-6 rounded-lg shadow"><h3 class="text-gray-500">待處理衣物</h3><p class="text-3xl font-bold">342 件</p></div>
                     </div>
-                    <h2 class="text-2xl font-bold mt-10 mb-6">近期營收趨勢</h2>
-                    <div class="bg-white p-6 rounded-lg shadow h-64"><p class="text-gray-400">圖表區域</p></div>
-                    <h2 class="text-2xl font-bold mt-10 mb-6">門市業績排行</h2>
-                    <div class="bg-white rounded-lg shadow overflow-hidden">
-                        <table class="w-full text-left">
-                            <thead class="bg-gray-50"><tr><th class="p-4">門市</th><th class="p-4">營收</th><th class="p-4">訂單數</th></tr></thead>
-                            <tbody>
-                                <tr class="border-b"> <td class="p-4">中和店</td> <td class="p-4 text-red-600 font-semibold">NT$ 4,567</td> <td class="p-4">45</td> </tr>
-                                <tr class="border-b"> <td class="p-4">板橋店</td> <td class="p-4">NT$ 3,120</td> <td class="p-4">32</td> </tr>
-                                <tr class="border-b"> <td class="p-4">永和店</td> <td class="p-4">NT$ 2,890</td> <td class="p-4">28</td> </tr>
-                            </tbody>
-                        </table>
-                    </div>
                 </main>
 
                 <!-- Account Management Content -->
                 <main id="accounts" class="content-panel">
-                    <h2 class="text-2xl font-bold mb-6">帳號管理</h2>
-                    <div class="bg-white p-8 rounded-lg shadow-md max-w-4xl mx-auto">
-                        <h3 class="text-xl font-semibold mb-6 border-b pb-4">新增登入帳號</h3>
-                        <form id="add-account-form" class="space-y-6">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">角色</label>
-                                    <select name="role" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
-                                        <option value="">-- 請選擇角色 --</option>
-                                        <option value="admin">經營者</option>
-                                        <option value="shop-manager">店家(主管)</option>
-                                        <option value="shop-staff">店家(員工)</option>
-                                        <option value="shop-auto">店家(自助)</option>
-                                        <option value="factory">工廠</option>
-                                        <option value="customer">顧客</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">大頭照</label>
-                                    <input name="avatar" type="file" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"/>
-                                </div>
-                            </div>
-                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
-                                    <input name="name" type="text" placeholder="請輸入姓名" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">職稱</label>
-                                     <select name="title" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
-                                        <option value="">-- 請選擇職稱 --</option>
-                                    </select>
-                                </div>
-                            </div>
-                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">手機號碼</label>
-                                    <input name="phone" type="tel" placeholder="請輸入手機號碼" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">電子郵件 (登入帳號)</label>
-                                    <input name="email" type="email" placeholder="請輸入電子郵件" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
-                                </div>
-                            </div>
-                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">密碼</label>
-                                    <input name="password" type="password" placeholder="請設定密碼" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">確認密碼</label>
-                                    <input name="confirmPassword" type="password" placeholder="請再次輸入密碼" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
-                                </div>
-                            </div>
-                             <p id="account-feedback" class="text-sm text-center h-5 my-2"></p>
-                            <div class="text-right pt-4">
-                                <button type="submit" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 transition-colors">儲存帳號</button>
-                            </div>
-                        </form>
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold">帳號管理</h2>
+                        <button id="add-account-btn" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">
+                            <i class="fas fa-plus mr-2"></i>新增帳號
+                        </button>
+                    </div>
+                    <div class="bg-white rounded-lg shadow overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="p-4 whitespace-nowrap">姓名</th>
+                                    <th class="p-4 whitespace-nowrap">電子郵件</th>
+                                    <th class="p-4 whitespace-nowrap">角色</th>
+                                    <th class="p-4 whitespace-nowrap">職稱</th>
+                                    <th class="p-4 whitespace-nowrap">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-list-body">
+                                <!-- User rows will be injected here by JS -->
+                            </tbody>
+                        </table>
                     </div>
                 </main>
                 
-                <!-- Other content panels placeholders -->
                 <main id="stores" class="content-panel"><h2 class="text-2xl font-bold mb-6">門市管理</h2></main>
                 <main id="factories" class="content-panel"><h2 class="text-2xl font-bold mb-6">工廠管理</h2></main>
                 <main id="reports" class="content-panel"><h2 class="text-2xl font-bold mb-6">營運報表</h2></main>
                 <main id="customers" class="content-panel"><h2 class="text-2xl font-bold mb-6">顧客管理</h2></main>
                 
-                <!-- System Settings Content -->
                 <main id="settings" class="content-panel">
                     <h2 class="text-2xl font-bold mb-6">系統設定</h2>
-                    <div class="bg-white p-8 rounded-lg shadow-md max-w-2xl mx-auto">
-                        <h3 class="text-xl font-semibold mb-6 border-b pb-4">職稱管理</h3>
-                        <div class="space-y-4">
-                            <div class="flex space-x-2">
-                                <input id="new-title-input" type="text" placeholder="輸入新的職稱" class="flex-grow p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
-                                <button id="add-title-btn" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">新增</button>
-                            </div>
-                            <ul id="title-list" class="space-y-2 pt-4">
-                                <!-- 職稱列表將由 JavaScript 動態生成 -->
-                            </ul>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Account Modal -->
+    <div id="add-account-modal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-xl font-semibold">新增登入帳號</h3>
+                <button id="close-modal-btn" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <div class="p-8 overflow-y-auto">
+                <form id="add-account-form" class="space-y-6">
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">角色</label>
+                            <select name="role" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
+                                <option value="">-- 請選擇角色 --</option>
+                                <option value="admin">經營者</option>
+                                <option value="shop-manager">店家(主管)</option>
+                                <option value="shop-staff">店家(員工)</option>
+                                <option value="shop-auto">店家(自助)</option>
+                                <option value="factory">工廠</option>
+                                <option value="customer">顧客</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">大頭照</label>
+                            <input name="avatar" type="file" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"/>
                         </div>
                     </div>
-                </main>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
+                            <input name="name" type="text" placeholder="請輸入姓名" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">職稱</label>
+                             <select name="title" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500" required>
+                                <option value="">-- 請選擇職稱 --</option>
+                            </select>
+                        </div>
+                    </div>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">手機號碼</label>
+                            <input name="phone" type="tel" placeholder="請輸入手機號碼" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">電子郵件 (登入帳號)</label>
+                            <input name="email" type="email" placeholder="請輸入電子郵件" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500" required>
+                        </div>
+                    </div>
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">密碼</label>
+                            <input name="password" type="password" placeholder="請設定密碼" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">確認密碼</label>
+                            <input name="confirmPassword" type="password" placeholder="請再次輸入密碼" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500" required>
+                        </div>
+                    </div>
+                     <p id="account-feedback" class="text-sm text-center h-5 my-2"></p>
+                    <div class="text-right pt-4">
+                        <button type="submit" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 transition-colors">儲存帳號</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -161,11 +166,10 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // IMPORTANT: Replace this with your own Firebase project configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyBeyVzpxVW2QEMaPXp3QD-pe81qER0qRgg",
+             apiKey: "AIzaSyBeyVzpxVW2QEMaPXp3QD-pe81qER0qRgg",
             authDomain: "smart-laundry-system-bef41.firebaseapp.com",
             projectId: "smart-laundry-system-bef41",
             storageBucket: "smart-laundry-system-bef41.appspot.com",
@@ -178,10 +182,21 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-
         document.addEventListener('DOMContentLoaded', function() {
+            // Display logged-in user's name
+            const userName = sessionStorage.getItem('userName');
+            if (userName) {
+                document.getElementById('user-display').textContent = `歡迎, ${userName}`;
+            }
+
             const sidebarLinks = document.querySelectorAll('.sidebar-link');
             const contentPanels = document.querySelectorAll('.content-panel');
+            const addAccountModal = document.getElementById('add-account-modal');
+            const addAccountBtn = document.getElementById('add-account-btn');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+
+            addAccountBtn.addEventListener('click', () => addAccountModal.classList.add('flex'));
+            closeModalBtn.addEventListener('click', () => addAccountModal.classList.remove('flex'));
 
             sidebarLinks.forEach(link => {
                 link.addEventListener('click', function(event) {
@@ -192,24 +207,50 @@
                     contentPanels.forEach(panel => {
                         panel.id === targetId ? panel.classList.add('active') : panel.classList.remove('active');
                     });
+                    if (targetId === 'accounts') {
+                        fetchAndRenderUsers();
+                    }
                 });
             });
 
-            // --- 職稱管理功能 ---
-            let jobTitles = ['店長', '正職人員', '兼職人員', '工廠廠長']; // In a real app, load this from Firestore
-            const titleList = document.getElementById('title-list');
-            const addTitleBtn = document.getElementById('add-title-btn');
-            const newTitleInput = document.getElementById('new-title-input');
+            const userListBody = document.getElementById('user-list-body');
+            const roleMapping = {
+                'admin': '經營者',
+                'shop-manager': '店家(主管)',
+                'shop-staff': '店家(員工)',
+                'shop-auto': '店家(自助)',
+                'factory': '工廠',
+                'customer': '顧客'
+            };
 
+            async function fetchAndRenderUsers() {
+                try {
+                    const querySnapshot = await getDocs(collection(db, "users"));
+                    userListBody.innerHTML = '';
+                    querySnapshot.forEach((doc) => {
+                        const user = doc.data();
+                        const tr = document.createElement('tr');
+                        tr.className = 'border-b';
+                        tr.innerHTML = `
+                            <td class="p-4">${user.name}</td>
+                            <td class="p-4">${user.email}</td>
+                            <td class="p-4">${roleMapping[user.role] || user.role}</td>
+                            <td class="p-4">${user.title}</td>
+                            <td class="p-4">
+                                <button class="text-gray-400 hover:text-red-500"><i class="fas fa-trash"></i></button>
+                            </td>
+                        `;
+                        userListBody.appendChild(tr);
+                    });
+                } catch (error) {
+                    console.error("Error fetching users: ", error);
+                    userListBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-500">無法載入使用者列表。</td></tr>';
+                }
+            }
+
+            // --- 職稱管理功能 (暫用靜態資料) ---
+            let jobTitles = ['店長', '正職人員', '兼職人員', '工廠廠長'];
             function renderTitles() {
-                titleList.innerHTML = '';
-                jobTitles.forEach(title => {
-                    const li = document.createElement('li');
-                    li.className = 'flex justify-between items-center bg-gray-50 p-3 rounded-md';
-                    li.innerHTML = `<span>${title}</span><button class="text-gray-400 hover:text-red-500" data-title="${title}"><i class="fas fa-trash"></i></button>`;
-                    titleList.appendChild(li);
-                });
-
                 const accountTitleSelect = document.querySelector('#add-account-form select[name="title"]');
                 if(accountTitleSelect){
                     const firstOption = accountTitleSelect.querySelector('option');
@@ -223,23 +264,6 @@
                     });
                 }
             }
-
-            addTitleBtn.addEventListener('click', () => {
-                const newTitle = newTitleInput.value.trim();
-                if (newTitle && !jobTitles.includes(newTitle)) {
-                    jobTitles.push(newTitle); // TODO: Save to Firestore
-                    newTitleInput.value = '';
-                    renderTitles();
-                }
-            });
-
-            titleList.addEventListener('click', (e) => {
-                if (e.target.closest('button')) {
-                    const titleToRemove = e.target.closest('button').dataset.title;
-                    jobTitles = jobTitles.filter(t => t !== titleToRemove); // TODO: Remove from Firestore
-                    renderTitles();
-                }
-            });
             renderTitles();
 
             // --- 新增帳號表單功能 ---
@@ -250,7 +274,6 @@
                 e.preventDefault();
                 const formData = new FormData(accountForm);
                 const data = Object.fromEntries(formData.entries());
-
                 feedbackElement.textContent = '';
                 feedbackElement.classList.remove('text-red-500', 'text-green-500');
 
@@ -260,49 +283,33 @@
                     return;
                 }
                 
-                if (!data.role || !data.title){
-                    feedbackElement.textContent = '錯誤：請選擇角色和職稱。';
-                    feedbackElement.classList.add('text-red-500');
-                    return;
-                }
-
                 const submitButton = accountForm.querySelector('button[type="submit"]');
                 submitButton.disabled = true;
                 submitButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 儲存中...`;
 
                 try {
-                    // 1. Create user in Firebase Authentication
                     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
                     const user = userCredential.user;
-                    console.log('User created in Auth:', user.uid);
-
-                    // 2. Save user details to Firestore
                     await setDoc(doc(db, "users", user.uid), {
-                        uid: user.uid,
-                        email: data.email,
-                        role: data.role,
-                        name: data.name,
-                        title: data.title,
-                        phone: data.phone,
-                        createdAt: new Date()
+                        uid: user.uid, email: data.email, role: data.role, name: data.name,
+                        title: data.title, phone: data.phone, createdAt: new Date()
                     });
-                    console.log('User data saved to Firestore');
                     
                     feedbackElement.textContent = '帳號已成功建立！';
                     feedbackElement.classList.add('text-green-500');
                     accountForm.reset();
-                    renderTitles(); // Re-render titles to reset dropdown
+                    renderTitles();
+                    setTimeout(() => {
+                        addAccountModal.classList.remove('flex');
+                        feedbackElement.textContent = '';
+                        fetchAndRenderUsers();
+                    }, 1500);
 
                 } catch (error) {
-                    console.error("帳號建立失敗:", error);
                     let message = '發生未知錯誤。';
-                    if (error.code === 'auth/email-already-in-use') {
-                        message = '錯誤：此電子郵件已被註冊。';
-                    } else if (error.code === 'auth/weak-password') {
-                        message = '錯誤：密碼強度不足，至少需要6個字元。';
-                    } else if (error.code === 'auth/invalid-email') {
-                         message = '錯誤：電子郵件格式不正確。';
-                    }
+                    if (error.code === 'auth/email-already-in-use') message = '錯誤：此電子郵件已被註冊。';
+                    else if (error.code === 'auth/weak-password') message = '錯誤：密碼強度不足，至少需要6個字元。';
+                    else if (error.code === 'auth/invalid-email') message = '錯誤：電子郵件格式不正確。';
                     feedbackElement.textContent = message;
                     feedbackElement.classList.add('text-red-500');
                 } finally {

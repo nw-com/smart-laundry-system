@@ -25,7 +25,7 @@
         <div class="text-center mb-8">
             <i class="fas fa-tshirt text-5xl text-red-500 mb-4"></i>
             <h1 class="text-2xl font-bold text-gray-800 mb-1">西北智慧洗衣系統</h1>
-            <p class="text-gray-500">雲端版 V0.0.4</p>
+            <p class="text-gray-500">雲端版 V0.0.5</p>
         </div>
 
         <div class="space-y-5">
@@ -55,17 +55,11 @@
 
         <button id="login-btn" class="btn-primary" disabled>登入</button>
     </div>
-    
-    <div id="config-error-container" class="hidden login-card text-center">
-         <h1 class="text-2xl font-bold text-red-600 mb-4">設定錯誤</h1>
-         <p class="text-gray-700">您尚未設定 Firebase。請打開 <code>index.html</code> 檔案，找到 <code>firebaseConfig</code> 物件，並將其替換為您自己的 Firebase 專案設定。</p>
-         <p class="text-gray-500 mt-4 text-sm">如果您不知道如何取得設定，請參考先前提供的 <code>setup_guide.md</code> 指南。</p>
-    </div>
-
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         
         const firebaseConfig = {
             apiKey: "AIzaSyBeyVzpxVW2QEMaPXp3QD-pe81qER0qRgg",
@@ -77,13 +71,9 @@
             measurementId: "G-FBQ997TMQ3"
         };
         
-        if (firebaseConfig.apiKey === "YOUR_API_KEY") {
-            document.getElementById('login-container').classList.add('hidden');
-            document.getElementById('config-error-container').classList.remove('hidden');
-        }
-
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
         
         const loginBtn = document.getElementById('login-btn');
         const emailInput = document.getElementById('email-input');
@@ -131,46 +121,39 @@
             loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 登入中...';
 
             signInWithEmailAndPassword(auth, email, password)
-                .then((userCredential) => {
-                    console.log("登入成功:", userCredential.user);
-                    
-                    // 在真實系統中，您應該從 Firestore 查詢該使用者的角色。
-                    // 為了方便測試，您可以手動更改此變數來登入不同角色介面
-                    // 可用角色: 'admin', 'shop-manager', 'shop-staff', 'shop-auto', 'factory', 'customer'
-                    const userRole = 'admin'; 
-                    
-                    // --- 根據角色進行跳轉 (已更新角色) ---
-                    switch (userRole) {
-                        case 'admin':
-                            window.location.href = './admin.html';
-                            break;
-                        case 'shop-manager':
-                            window.location.href = './shop-manager.html';
-                            break;
-                        case 'shop-staff':
-                            window.location.href = './shop-staff.html';
-                            break;
-                        case 'shop-auto':
-                            window.location.href = './shop-auto.html';
-                            break;
-                        case 'factory':
-                            window.location.href = './factory.html';
-                            break;
-                        case 'customer':
-                            window.location.href = './customer.html';
-                            break;
-                        default:
-                            errorMessage.textContent = '無法識別您的角色。';
+                .then(async (userCredential) => {
+                    const user = userCredential.user;
+                    const userDocRef = doc(db, "users", user.uid);
+                    const userDocSnap = await getDoc(userDocRef);
+
+                    if (userDocSnap.exists()) {
+                        const userData = userDocSnap.data();
+                        const userRole = userData.role;
+                        
+                        // 將使用者資訊存到 Session Storage 供下個頁面使用
+                        sessionStorage.setItem('userName', userData.name);
+                        sessionStorage.setItem('userRole', userData.role);
+
+                        switch (userRole) {
+                            case 'admin': window.location.href = './admin.html'; break;
+                            case 'shop-manager': window.location.href = './shop-manager.html'; break;
+                            case 'shop-staff': window.location.href = './shop-staff.html'; break;
+                            case 'shop-auto': window.location.href = './shop-auto.html'; break;
+                            case 'factory': window.location.href = './factory.html'; break;
+                            case 'customer': window.location.href = './customer.html'; break;
+                            default:
+                                errorMessage.textContent = '您的帳號角色無法識別。';
+                                auth.signOut(); // 登出異常帳號
+                        }
+                    } else {
+                        errorMessage.textContent = '找不到您的使用者資料，請聯繫管理員。';
+                        auth.signOut();
                     }
                 })
                 .catch((error) => {
-                    console.error("登入失敗:", error.code, error.message);
                     if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
                         errorMessage.textContent = '帳號或密碼錯誤。';
-                    } else if (error.code === 'auth/api-key-not-valid') {
-                        errorMessage.textContent = 'Firebase API 金鑰無效，請檢查設定。';
-                    }
-                    else {
+                    } else {
                         errorMessage.textContent = '登入時發生未知錯誤。';
                     }
                 })
