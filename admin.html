@@ -73,12 +73,12 @@
                     <h2 class="text-2xl font-bold mb-6">帳號管理</h2>
                     <div class="bg-white p-8 rounded-lg shadow-md max-w-4xl mx-auto">
                         <h3 class="text-xl font-semibold mb-6 border-b pb-4">新增登入帳號</h3>
-                        <form class="space-y-6">
+                        <form id="add-account-form" class="space-y-6">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">角色</label>
-                                    <select class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
-                                        <option>-- 請選擇角色 --</option>
+                                    <select name="role" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
+                                        <option value="">-- 請選擇角色 --</option>
                                         <option value="admin">經營者</option>
                                         <option value="shop-manager">店家(主管)</option>
                                         <option value="shop-staff">店家(員工)</option>
@@ -89,45 +89,42 @@
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">大頭照</label>
-                                    <input type="file" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"/>
+                                    <input name="avatar" type="file" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"/>
                                 </div>
                             </div>
                              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">姓名</label>
-                                    <input type="text" placeholder="請輸入姓名" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
+                                    <input name="name" type="text" placeholder="請輸入姓名" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">職稱</label>
-                                     <select class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
-                                        <option>-- 請選擇職稱 --</option>
-                                        <option>店長</option>
-                                        <option>正職人員</option>
-                                        <option>兼職人員</option>
-                                        <option>工廠廠長</option>
+                                     <select name="title" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
+                                        <option value="">-- 請選擇職稱 --</option>
                                     </select>
                                 </div>
                             </div>
                              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">手機號碼</label>
-                                    <input type="tel" placeholder="請輸入手機號碼" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
+                                    <input name="phone" type="tel" placeholder="請輸入手機號碼" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">電子郵件 (登入帳號)</label>
-                                    <input type="email" placeholder="請輸入電子郵件" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
+                                    <input name="email" type="email" placeholder="請輸入電子郵件" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
                                 </div>
                             </div>
                              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">密碼</label>
-                                    <input type="password" placeholder="請設定密碼" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
+                                    <input name="password" type="password" placeholder="請設定密碼" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">確認密碼</label>
-                                    <input type="password" placeholder="請再次輸入密碼" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
+                                    <input name="confirmPassword" type="password" placeholder="請再次輸入密碼" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
                                 </div>
                             </div>
+                             <p id="account-feedback" class="text-sm text-center h-5 my-2"></p>
                             <div class="text-right pt-4">
                                 <button type="submit" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 transition-colors">儲存帳號</button>
                             </div>
@@ -161,7 +158,27 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // IMPORTANT: Replace this with your own Firebase project configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBeyVzpxVW2QEMaPXp3QD-pe81qER0qRgg",
+            authDomain: "smart-laundry-system-bef41.firebaseapp.com",
+            projectId: "smart-laundry-system-bef41",
+            storageBucket: "smart-laundry-system-bef41.appspot.com",
+            messagingSenderId: "803873226355",
+            appId: "1:803873226355:web:22ccb308ff312d47103406",
+            measurementId: "G-FBQ997TMQ3"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+
         document.addEventListener('DOMContentLoaded', function() {
             const sidebarLinks = document.querySelectorAll('.sidebar-link');
             const contentPanels = document.querySelectorAll('.content-panel');
@@ -169,33 +186,22 @@
             sidebarLinks.forEach(link => {
                 link.addEventListener('click', function(event) {
                     event.preventDefault();
-                    
                     const targetId = this.dataset.target;
-
                     sidebarLinks.forEach(innerLink => innerLink.classList.remove('active'));
                     this.classList.add('active');
-                    
                     contentPanels.forEach(panel => {
-                        if (panel.id === targetId) {
-                            panel.classList.add('active');
-                        } else {
-                            panel.classList.remove('active');
-                        }
+                        panel.id === targetId ? panel.classList.add('active') : panel.classList.remove('active');
                     });
                 });
             });
 
             // --- 職稱管理功能 ---
-            // 實際應用中，jobTitles 應該從 Firestore 讀取和寫入
-            let jobTitles = ['店長', '正職人員', '兼職人員', '工廠廠長'];
-            
+            let jobTitles = ['店長', '正職人員', '兼職人員', '工廠廠長']; // In a real app, load this from Firestore
             const titleList = document.getElementById('title-list');
             const addTitleBtn = document.getElementById('add-title-btn');
             const newTitleInput = document.getElementById('new-title-input');
-            const titleSelectInAccounts = document.querySelector('#accounts select'); // 這裡假設帳號管理中的職稱是第一個select
 
             function renderTitles() {
-                // Render title list in settings
                 titleList.innerHTML = '';
                 jobTitles.forEach(title => {
                     const li = document.createElement('li');
@@ -204,8 +210,7 @@
                     titleList.appendChild(li);
                 });
 
-                // Render title options in account form
-                const accountTitleSelect = document.querySelector('form select:nth-of-type(2)');
+                const accountTitleSelect = document.querySelector('#add-account-form select[name="title"]');
                 if(accountTitleSelect){
                     const firstOption = accountTitleSelect.querySelector('option');
                     accountTitleSelect.innerHTML = '';
@@ -222,23 +227,89 @@
             addTitleBtn.addEventListener('click', () => {
                 const newTitle = newTitleInput.value.trim();
                 if (newTitle && !jobTitles.includes(newTitle)) {
-                    jobTitles.push(newTitle);
+                    jobTitles.push(newTitle); // TODO: Save to Firestore
                     newTitleInput.value = '';
                     renderTitles();
-                    // 在此處加入寫入 Firestore 的程式碼
                 }
             });
 
             titleList.addEventListener('click', (e) => {
                 if (e.target.closest('button')) {
                     const titleToRemove = e.target.closest('button').dataset.title;
-                    jobTitles = jobTitles.filter(t => t !== titleToRemove);
+                    jobTitles = jobTitles.filter(t => t !== titleToRemove); // TODO: Remove from Firestore
                     renderTitles();
-                    // 在此處加入從 Firestore 刪除的程式碼
                 }
             });
-
             renderTitles();
+
+            // --- 新增帳號表單功能 ---
+            const accountForm = document.getElementById('add-account-form');
+            const feedbackElement = document.getElementById('account-feedback');
+
+            accountForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(accountForm);
+                const data = Object.fromEntries(formData.entries());
+
+                feedbackElement.textContent = '';
+                feedbackElement.classList.remove('text-red-500', 'text-green-500');
+
+                if (data.password !== data.confirmPassword) {
+                    feedbackElement.textContent = '錯誤：兩次輸入的密碼不一致。';
+                    feedbackElement.classList.add('text-red-500');
+                    return;
+                }
+                
+                if (!data.role || !data.title){
+                    feedbackElement.textContent = '錯誤：請選擇角色和職稱。';
+                    feedbackElement.classList.add('text-red-500');
+                    return;
+                }
+
+                const submitButton = accountForm.querySelector('button[type="submit"]');
+                submitButton.disabled = true;
+                submitButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 儲存中...`;
+
+                try {
+                    // 1. Create user in Firebase Authentication
+                    const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+                    const user = userCredential.user;
+                    console.log('User created in Auth:', user.uid);
+
+                    // 2. Save user details to Firestore
+                    await setDoc(doc(db, "users", user.uid), {
+                        uid: user.uid,
+                        email: data.email,
+                        role: data.role,
+                        name: data.name,
+                        title: data.title,
+                        phone: data.phone,
+                        createdAt: new Date()
+                    });
+                    console.log('User data saved to Firestore');
+                    
+                    feedbackElement.textContent = '帳號已成功建立！';
+                    feedbackElement.classList.add('text-green-500');
+                    accountForm.reset();
+                    renderTitles(); // Re-render titles to reset dropdown
+
+                } catch (error) {
+                    console.error("帳號建立失敗:", error);
+                    let message = '發生未知錯誤。';
+                    if (error.code === 'auth/email-already-in-use') {
+                        message = '錯誤：此電子郵件已被註冊。';
+                    } else if (error.code === 'auth/weak-password') {
+                        message = '錯誤：密碼強度不足，至少需要6個字元。';
+                    } else if (error.code === 'auth/invalid-email') {
+                         message = '錯誤：電子郵件格式不正確。';
+                    }
+                    feedbackElement.textContent = message;
+                    feedbackElement.classList.add('text-red-500');
+                } finally {
+                     submitButton.disabled = false;
+                     submitButton.textContent = '儲存帳號';
+                }
+            });
         });
     </script>
 </body>
