@@ -6,6 +6,8 @@
     <title>經營者後台</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 引入 SortableJS 用於拖曳排序 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <style>
         body { font-family: 'Inter', 'Noto Sans TC', sans-serif; }
         .main-layout { display: flex; flex-direction: column; height: 100vh; }
@@ -16,6 +18,10 @@
         .content-panel.active { display: block; }
         .modal { display: none; }
         .modal.flex { display: flex; }
+        .sortable-ghost {
+            background: #f0f0f0;
+            opacity: 0.6;
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -88,8 +94,21 @@
                 <main id="reports" class="content-panel"><h2 class="text-2xl font-bold mb-6">營運報表</h2></main>
                 <main id="customers" class="content-panel"><h2 class="text-2xl font-bold mb-6">顧客管理</h2></main>
                 
+                <!-- System Settings Content -->
                 <main id="settings" class="content-panel">
                     <h2 class="text-2xl font-bold mb-6">系統設定</h2>
+                    <div class="bg-white p-8 rounded-lg shadow-md max-w-2xl mx-auto">
+                        <h3 class="text-xl font-semibold mb-6 border-b pb-4">職稱管理</h3>
+                        <div class="space-y-4">
+                            <div class="flex space-x-2">
+                                <input id="new-title-input" type="text" placeholder="輸入新的職稱" class="flex-grow p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
+                                <button id="add-title-btn" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors">新增</button>
+                            </div>
+                            <ul id="title-list" class="space-y-2 pt-4">
+                                <!-- 職稱列表將由 JavaScript 動態生成 -->
+                            </ul>
+                        </div>
+                    </div>
                 </main>
             </div>
         </div>
@@ -247,15 +266,39 @@
                     userListBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-500">無法載入使用者列表。</td></tr>';
                 }
             }
-
-            // --- 職稱管理功能 (暫用靜態資料) ---
+            
+            // --- 職稱管理功能 (整合手動排序) ---
             let jobTitles = ['店長', '正職人員', '兼職人員', '工廠廠長'];
-            function renderTitles() {
+            
+            const titleList = document.getElementById('title-list');
+            const addTitleBtn = document.getElementById('add-title-btn');
+            const newTitleInput = document.getElementById('new-title-input');
+
+            // 渲染職稱列表 (用於設定頁面)
+            function renderTitleList() {
+                if (titleList) {
+                    titleList.innerHTML = '';
+                    jobTitles.forEach(title => {
+                        const li = document.createElement('li');
+                        li.className = 'flex justify-between items-center bg-gray-50 p-3 rounded-md';
+                        li.innerHTML = `
+                            <div class="flex items-center">
+                                <i class="fas fa-grip-vertical mr-3 text-gray-400 cursor-move drag-handle"></i>
+                                <span>${title}</span>
+                            </div>
+                            <button class="text-gray-400 hover:text-red-500" data-title="${title}"><i class="fas fa-trash"></i></button>`;
+                        titleList.appendChild(li);
+                    });
+                }
+            }
+
+            // 渲染職稱下拉選單 (用於新增帳號 Modal)
+            function renderTitleDropdown() {
                 const accountTitleSelect = document.querySelector('#add-account-form select[name="title"]');
                 if(accountTitleSelect){
                     const firstOption = accountTitleSelect.querySelector('option');
                     accountTitleSelect.innerHTML = '';
-                    accountTitleSelect.appendChild(firstOption);
+                    if (firstOption) accountTitleSelect.appendChild(firstOption);
                     jobTitles.forEach(title => {
                         const option = document.createElement('option');
                         option.value = title;
@@ -264,7 +307,53 @@
                     });
                 }
             }
-            renderTitles();
+            
+            // 統一渲染函式
+            function renderAllTitles() {
+                renderTitleList();
+                renderTitleDropdown();
+            }
+
+            if (addTitleBtn) {
+                addTitleBtn.addEventListener('click', () => {
+                    const newTitle = newTitleInput.value.trim();
+                    if (newTitle && !jobTitles.includes(newTitle)) {
+                        jobTitles.push(newTitle); // TODO: Save to Firestore
+                        newTitleInput.value = '';
+                        renderAllTitles();
+                    }
+                });
+            }
+
+            if (titleList) {
+                titleList.addEventListener('click', (e) => {
+                    if (e.target.closest('button')) {
+                        const titleToRemove = e.target.closest('button').dataset.title;
+                        jobTitles = jobTitles.filter(t => t !== titleToRemove); // TODO: Remove from Firestore
+                        renderAllTitles();
+                    }
+                });
+                
+                // 初始化 SortableJS
+                new Sortable(titleList, {
+                    handle: '.drag-handle', // 指定拖曳的控制點
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    onEnd: function() {
+                        // 當拖曳結束後，從 DOM 重新讀取順序並更新陣列
+                        const updatedTitles = [];
+                        titleList.querySelectorAll('li span').forEach(span => {
+                            updatedTitles.push(span.textContent);
+                        });
+                        jobTitles = updatedTitles;
+                        // 重新渲染下拉選單以符合新的順序
+                        renderTitleDropdown(); 
+                        // TODO: 將新的 jobTitles 陣列順序儲存到 Firestore
+                        console.log("New title order:", jobTitles);
+                    }
+                });
+            }
+            renderAllTitles(); // 初始渲染
 
             // --- 新增帳號表單功能 ---
             const accountForm = document.getElementById('add-account-form');
@@ -298,7 +387,7 @@
                     feedbackElement.textContent = '帳號已成功建立！';
                     feedbackElement.classList.add('text-green-500');
                     accountForm.reset();
-                    renderTitles();
+                    renderAllTitles();
                     setTimeout(() => {
                         addAccountModal.classList.remove('flex');
                         feedbackElement.textContent = '';
@@ -317,6 +406,8 @@
                      submitButton.textContent = '儲存帳號';
                 }
             });
+            // Initial fetch
+            fetchAndRenderUsers();
         });
     </script>
 </body>
