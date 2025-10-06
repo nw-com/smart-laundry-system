@@ -227,7 +227,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getFirestore, doc, setDoc, collection, getDocs, getDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
@@ -246,7 +246,42 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        document.addEventListener('DOMContentLoaded', async function() {
+        document.addEventListener('DOMContentLoaded', function() {
+            onAuthStateChanged(auth, async (user) => {
+                const permissionErrorBanner = document.getElementById('permission-error-banner');
+                
+                function showPermissionError() {
+                    permissionErrorBanner.classList.remove('hidden');
+                    // Disable interactive elements
+                    document.querySelectorAll('button, input, select, a.sidebar-link').forEach(el => {
+                        // Keep the main logout button enabled
+                        if (el.getAttribute('href') !== './index.html') {
+                            el.disabled = true;
+                        }
+                    });
+                }
+
+                if (user) {
+                    // User is signed in, verify their role.
+                    const userDocRef = doc(db, "users", user.uid);
+                    const userDocSnap = await getDoc(userDocRef);
+
+                    if (userDocSnap.exists() && userDocSnap.data().role === 'admin') {
+                        // User is an admin, proceed to initialize the page.
+                        initializeAppLogic(userDocSnap.data());
+                    } else {
+                        // User is logged in, but not an admin.
+                        document.getElementById('user-display').textContent = '權限不足';
+                        showPermissionError();
+                    }
+                } else {
+                    // User is not signed in.
+                    window.location.href = './index.html';
+                }
+            });
+        });
+
+        async function initializeAppLogic(adminData) {
             let allUsers = [];
             let currentSort = { column: 'name', direction: 'asc' };
             let jobTitles = [];
@@ -268,26 +303,20 @@
             const avatarPreview = document.getElementById('avatar-preview');
             const modalTitle = document.getElementById('modal-title');
             const confirmationModal = document.getElementById('confirmation-modal');
-            const permissionErrorBanner = document.getElementById('permission-error-banner');
 
-            // --- Variable declarations moved up ---
+            // Variable declarations
             const roleMapping = { 'admin': '經營者', 'shop-manager': '店家(主管)', 'shop-staff': '店家(員工)', 'shop-auto': '店家(自助)', 'factory': '工廠', 'customer': '顧客' };
             const settingsDocRef = doc(db, "settings", "jobTitles");
 
-
-            // --- Helper Functions ---
-            function showPermissionError() {
-                permissionErrorBanner.classList.remove('hidden');
-            }
-
-            // --- Initial Setup ---
-            const userName = sessionStorage.getItem('userName');
-            if (userName) userDisplay.textContent = `歡迎, ${userName}`;
+            // Initial Setup
+            const userName = adminData.name || adminData.email;
+            userDisplay.textContent = `歡迎, ${userName}`;
+            sessionStorage.setItem('userName', userName);
             
             await loadJobTitles();
             await fetchAndRenderUsers();
 
-            // --- Event Listeners ---
+            // Event Listeners
             addAccountBtn.addEventListener('click', () => openAccountModal('add'));
             closeModalBtn.addEventListener('click', closeAccountModal);
 
@@ -305,21 +334,16 @@
             accountForm.addEventListener('submit', handleAccountFormSubmit);
             avatarInput.addEventListener('change', handleAvatarChange);
 
-            // --- Account List Sorting ---
             document.querySelectorAll('.sortable-header').forEach(header => {
                 header.addEventListener('click', () => {
                     const column = header.dataset.sort;
-                    if (currentSort.column === column) {
-                        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-                    } else {
-                        currentSort.column = column;
-                        currentSort.direction = 'asc';
-                    }
+                    currentSort.column = column;
+                    currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
                     sortAndRenderUsers();
                 });
             });
 
-            // --- User Management (CRUD) ---
+            // Functions
             async function fetchAndRenderUsers() {
                 try {
                     userListBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">載入中...</td></tr>';
@@ -328,12 +352,7 @@
                     sortAndRenderUsers();
                 } catch (error) {
                     console.error("Error fetching users: ", error);
-                    if (error.code === 'permission-denied') {
-                        userListBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-red-500">權限不足，無法載入使用者列表。</td></tr>';
-                        showPermissionError();
-                    } else {
-                        userListBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">無法載入使用者列表: ${error.message}</td></tr>`;
-                    }
+                    userListBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">無法載入使用者列表: ${error.message}</td></tr>`;
                 }
             }
 
@@ -350,10 +369,10 @@
             }
             
             function renderUserList() {
-                if (allUsers.length === 0 && userListBody.querySelector('td[colspan="6"]')) {
+                if (allUsers.length === 0) {
                      userListBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">目前沒有任何帳號。</td></tr>';
+                     return;
                 }
-                if (allUsers.length === 0) return;
 
                 userListBody.innerHTML = '';
                 allUsers.forEach(user => {
@@ -392,7 +411,6 @@
                 });
             }
             
-            // --- Account Modal & Form ---
             async function openAccountModal(mode, uid = null) {
                 accountForm.reset();
                 resetAvatarPreview();
@@ -405,7 +423,6 @@
                     modalTitle.textContent = '編輯帳號';
                     const user = allUsers.find(u => u.uid === uid);
                     if (!user) return;
-                    // Populate form
                     Object.keys(user).forEach(key => {
                         const input = accountForm.querySelector(`[name="${key}"]`);
                         if (input) input.value = user[key];
@@ -427,7 +444,6 @@
                 const data = Object.fromEntries(formData.entries());
                 const isEditMode = !!data.uid;
                 
-                feedbackElement.textContent = '';
                 if (data.password && data.password !== data.confirmPassword) {
                     feedbackElement.textContent = '錯誤：兩次輸入的密碼不一致。';
                     feedbackElement.classList.add('text-red-500');
@@ -439,24 +455,17 @@
                 submitButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 儲存中...`;
 
                 try {
-                    let newAvatarUrl = null;
-                    if (avatarInput.files[0]) {
-                        const file = avatarInput.files[0];
-                        // Use a consistent UID for storage path
-                        const targetUid = isEditMode ? data.uid : (Date.now().toString()); // Use temporary for new user
-                        const storageRef = ref(storage, `avatars/${targetUid}`);
-                        await uploadBytes(storageRef, file);
-                        newAvatarUrl = await getDownloadURL(storageRef);
-                    }
-
                     if (isEditMode) {
-                        // Update user
                         const userRef = doc(db, "users", data.uid);
                         const updateData = { name: data.name, role: data.role, title: data.title, phone: data.phone };
-                        if(newAvatarUrl) updateData.avatarUrl = newAvatarUrl;
+                        if (avatarInput.files[0]) {
+                            const file = avatarInput.files[0];
+                            const storageRef = ref(storage, `avatars/${data.uid}`);
+                            await uploadBytes(storageRef, file);
+                            updateData.avatarUrl = await getDownloadURL(storageRef);
+                        }
                         await updateDoc(userRef, updateData);
                     } else {
-                        // Create user
                         const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
                         const user = userCredential.user;
                         const userData = { uid: user.uid, email: data.email, role: data.role, name: data.name, title: data.title, phone: data.phone, createdAt: new Date() };
@@ -480,17 +489,10 @@
                     let message = '發生未知錯誤。';
                      if (error.code) {
                         switch (error.code) {
-                            case 'auth/email-already-in-use':
-                                message = '錯誤：此電子郵件已被註冊。';
-                                break;
-                            case 'auth/weak-password':
-                                message = '錯誤：密碼強度不足，至少需要6個字元。';
-                                break;
-                            case 'storage/unauthorized':
-                                message = '錯誤：您沒有上傳檔案的權限。請檢查 Firebase Storage 安全規則。';
-                                break;
-                            default:
-                                message = `發生錯誤: ${error.message}`;
+                            case 'auth/email-already-in-use': message = '錯誤：此電子郵件已被註冊。'; break;
+                            case 'auth/weak-password': message = '錯誤：密碼強度不足，至少需要6個字元。'; break;
+                            case 'storage/unauthorized': message = '錯誤：您沒有上傳檔案的權限。請檢查 Firebase Storage 安全規則。'; break;
+                            default: message = `發生錯誤: ${error.message}`;
                         }
                     }
                     feedbackElement.textContent = message;
@@ -512,7 +514,6 @@
                 });
             }
 
-            // --- Confirmation Modal ---
             function showConfirmationModal(text, onConfirm) {
                 confirmationModal.querySelector('#confirm-text').textContent = text;
                 confirmationModal.classList.add('flex');
@@ -522,26 +523,19 @@
 
                 const close = () => {
                     confirmationModal.classList.remove('flex');
-                    actionBtn.onclick = null; // Clean up listener
+                    actionBtn.onclick = null;
                 };
                 
-                actionBtn.onclick = () => {
-                    onConfirm();
-                    close();
-                };
+                actionBtn.onclick = () => { onConfirm(); close(); };
                 cancelBtn.onclick = close;
             }
 
-            // --- Job Title Management ---
             async function loadJobTitles() {
                 try {
                     const docSnap = await getDoc(settingsDocRef);
                     jobTitles = (docSnap.exists() && docSnap.data().titles) ? docSnap.data().titles : ['店長', '正職人員'];
                 } catch (error) {
                     console.error("Error loading job titles:", error);
-                    if (error.code === 'permission-denied') {
-                       showPermissionError();
-                    }
                     jobTitles = ['讀取失敗']; 
                 }
                 renderAllTitles();
@@ -601,41 +595,36 @@
             });
 
             titleList.addEventListener('click', async e => {
-                const target = e.target;
-                const li = target.closest('li');
+                const li = e.target.closest('li');
                 if (!li) return;
                 const index = parseInt(li.dataset.index, 10);
                 
-                if (target.closest('.delete-title-btn')) {
+                if (e.target.closest('.delete-title-btn')) {
                     jobTitles.splice(index, 1);
                     renderAllTitles();
                     await saveJobTitles();
-                } else if (target.closest('.edit-title-btn')) {
+                } else if (e.target.closest('.edit-title-btn')) {
                     const span = li.querySelector('.title-text');
-                    const currentText = span.textContent;
                     const input = document.createElement('input');
                     input.type = 'text';
-                    input.value = currentText;
+                    input.value = span.textContent;
                     input.className = 'p-1 border rounded-md';
                     span.replaceWith(input);
                     input.focus();
 
                     const saveEdit = async () => {
                         const newText = input.value.trim();
-                        if (newText && newText !== currentText) {
+                        if (newText && newText !== span.textContent) {
                             jobTitles[index] = newText;
                             await saveJobTitles();
                         }
-                        renderAllTitles(); // Re-render the whole list to restore span
+                        renderAllTitles();
                     };
 
                     input.addEventListener('blur', saveEdit);
                     input.addEventListener('keydown', e => {
                         if (e.key === 'Enter') input.blur();
-                        if (e.key === 'Escape') {
-                            input.value = currentText;
-                            input.blur();
-                        }
+                        if (e.key === 'Escape') { input.value = span.textContent; input.blur(); }
                     });
                 }
             });
@@ -649,7 +638,6 @@
                 }
             });
             
-            // --- Avatar Preview ---
             const defaultAvatarSrc = 'https://placehold.co/100x100/e2e8f0/cbd5e0?text=頭像';
             function resetAvatarPreview() {
                 avatarPreview.src = defaultAvatarSrc;
@@ -659,7 +647,7 @@
                 const file = avatarInput.files[0];
                 if (file) avatarPreview.src = URL.createObjectURL(file);
             }
-        });
+        }
     </script>
 </body>
 </html>
