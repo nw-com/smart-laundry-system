@@ -64,6 +64,12 @@
             
             <!-- Scrollable Content Area -->
             <div class="flex-grow scrollable-area p-6">
+                <!-- Permission Error Banner -->
+                <div id="permission-error-banner" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+                  <p class="font-bold">權限不足</p>
+                  <p>您目前的帳號沒有足夠的權限來檢視或管理此頁面的內容。請確認您已使用經營者(admin)帳號登入，並檢查 Firestore 安全規則是否已正確設定。</p>
+                </div>
+
                 <!-- Dashboard Content -->
                 <main id="dashboard" class="content-panel active">
                     <h2 class="text-2xl font-bold mb-6">總覽</h2>
@@ -87,6 +93,7 @@
                         <table class="w-full text-left">
                             <thead class="bg-gray-50">
                                 <tr>
+                                    <th class="p-4 whitespace-nowrap">大頭照</th>
                                     <th class="p-4 whitespace-nowrap sortable-header" data-sort="name">
                                         姓名 <span class="sort-icon"><i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i></span>
                                     </th>
@@ -261,11 +268,17 @@
             const avatarPreview = document.getElementById('avatar-preview');
             const modalTitle = document.getElementById('modal-title');
             const confirmationModal = document.getElementById('confirmation-modal');
+            const permissionErrorBanner = document.getElementById('permission-error-banner');
 
-            // --- FIXED: Variable declarations moved up ---
+            // --- Variable declarations moved up ---
             const roleMapping = { 'admin': '經營者', 'shop-manager': '店家(主管)', 'shop-staff': '店家(員工)', 'shop-auto': '店家(自助)', 'factory': '工廠', 'customer': '顧客' };
             const settingsDocRef = doc(db, "settings", "jobTitles");
 
+
+            // --- Helper Functions ---
+            function showPermissionError() {
+                permissionErrorBanner.classList.remove('hidden');
+            }
 
             // --- Initial Setup ---
             const userName = sessionStorage.getItem('userName');
@@ -309,13 +322,18 @@
             // --- User Management (CRUD) ---
             async function fetchAndRenderUsers() {
                 try {
-                    userListBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">載入中...</td></tr>';
+                    userListBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">載入中...</td></tr>';
                     const querySnapshot = await getDocs(collection(db, "users"));
                     allUsers = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     sortAndRenderUsers();
                 } catch (error) {
                     console.error("Error fetching users: ", error);
-                    userListBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-500">無法載入使用者列表。</td></tr>';
+                    if (error.code === 'permission-denied') {
+                        userListBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-red-500">權限不足，無法載入使用者列表。</td></tr>';
+                        showPermissionError();
+                    } else {
+                        userListBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-500">無法載入使用者列表: ${error.message}</td></tr>`;
+                    }
                 }
             }
 
@@ -332,20 +350,25 @@
             }
             
             function renderUserList() {
-                if (allUsers.length === 0) {
-                    userListBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">目前沒有任何帳號。</td></tr>';
-                    return;
+                if (allUsers.length === 0 && userListBody.querySelector('td[colspan="6"]')) {
+                     userListBody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500">目前沒有任何帳號。</td></tr>';
                 }
+                if (allUsers.length === 0) return;
+
                 userListBody.innerHTML = '';
                 allUsers.forEach(user => {
                     const tr = document.createElement('tr');
                     tr.className = 'border-b';
+                    const avatarSrc = user.avatarUrl || 'https://placehold.co/40x40/e2e8f0/cbd5e0?text=頭像';
                     tr.innerHTML = `
-                        <td class="p-4">${user.name || ''}</td>
-                        <td class="p-4">${user.email || ''}</td>
-                        <td class="p-4">${roleMapping[user.role] || user.role}</td>
-                        <td class="p-4">${user.title || ''}</td>
-                        <td class="p-4 space-x-4">
+                        <td class="p-4">
+                            <img src="${avatarSrc}" alt="${user.name || 'avatar'}" class="w-10 h-10 rounded-full object-cover">
+                        </td>
+                        <td class="p-4 align-middle">${user.name || ''}</td>
+                        <td class="p-4 align-middle">${user.email || ''}</td>
+                        <td class="p-4 align-middle">${roleMapping[user.role] || user.role}</td>
+                        <td class="p-4 align-middle">${user.title || ''}</td>
+                        <td class="p-4 align-middle space-x-4">
                             <button class="text-gray-400 hover:text-blue-500 edit-btn" data-uid="${user.uid}"><i class="fas fa-edit"></i></button>
                             <button class="text-gray-400 hover:text-red-500 delete-btn" data-uid="${user.uid}" data-name="${user.name}"><i class="fas fa-trash"></i></button>
                         </td>`;
@@ -374,6 +397,7 @@
                 accountForm.reset();
                 resetAvatarPreview();
                 feedbackElement.textContent = '';
+                feedbackElement.classList.remove('text-red-500', 'text-green-500');
                 accountForm.querySelector('input[name="password"]').required = (mode === 'add');
                 accountForm.querySelector('input[name="email"]').disabled = (mode === 'edit');
                 
@@ -415,28 +439,31 @@
                 submitButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i> 儲存中...`;
 
                 try {
+                    let newAvatarUrl = null;
+                    if (avatarInput.files[0]) {
+                        const file = avatarInput.files[0];
+                        // Use a consistent UID for storage path
+                        const targetUid = isEditMode ? data.uid : (Date.now().toString()); // Use temporary for new user
+                        const storageRef = ref(storage, `avatars/${targetUid}`);
+                        await uploadBytes(storageRef, file);
+                        newAvatarUrl = await getDownloadURL(storageRef);
+                    }
+
                     if (isEditMode) {
                         // Update user
                         const userRef = doc(db, "users", data.uid);
                         const updateData = { name: data.name, role: data.role, title: data.title, phone: data.phone };
-                        if (avatarInput.files[0]) {
-                            const file = avatarInput.files[0];
-                            const storageRef = ref(storage, `avatars/${data.uid}`);
-                            await uploadBytes(storageRef, file);
-                            updateData.avatarUrl = await getDownloadURL(storageRef);
-                        }
+                        if(newAvatarUrl) updateData.avatarUrl = newAvatarUrl;
                         await updateDoc(userRef, updateData);
-                        // NOTE: Updating email/password requires re-authentication or a backend function.
                     } else {
                         // Create user
                         const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
                         const user = userCredential.user;
                         const userData = { uid: user.uid, email: data.email, role: data.role, name: data.name, title: data.title, phone: data.phone, createdAt: new Date() };
                         if (avatarInput.files[0]) {
-                            const file = avatarInput.files[0];
-                            const storageRef = ref(storage, `avatars/${user.uid}`);
-                            await uploadBytes(storageRef, file);
-                            userData.avatarUrl = await getDownloadURL(storageRef);
+                            const finalStorageRef = ref(storage, `avatars/${user.uid}`);
+                            await uploadBytes(finalStorageRef, avatarInput.files[0]);
+                            userData.avatarUrl = await getDownloadURL(finalStorageRef);
                         }
                         await setDoc(doc(db, "users", user.uid), userData);
                     }
@@ -451,8 +478,21 @@
                 } catch (error) {
                     console.error("Account form error:", error);
                     let message = '發生未知錯誤。';
-                    if (error.code === 'auth/email-already-in-use') message = '錯誤：此電子郵件已被註冊。';
-                    else if (error.code === 'auth/weak-password') message = '錯誤：密碼強度不足，至少需要6個字元。';
+                     if (error.code) {
+                        switch (error.code) {
+                            case 'auth/email-already-in-use':
+                                message = '錯誤：此電子郵件已被註冊。';
+                                break;
+                            case 'auth/weak-password':
+                                message = '錯誤：密碼強度不足，至少需要6個字元。';
+                                break;
+                            case 'storage/unauthorized':
+                                message = '錯誤：您沒有上傳檔案的權限。請檢查 Firebase Storage 安全規則。';
+                                break;
+                            default:
+                                message = `發生錯誤: ${error.message}`;
+                        }
+                    }
                     feedbackElement.textContent = message;
                     feedbackElement.classList.add('text-red-500');
                 } finally {
@@ -465,9 +505,6 @@
                 showConfirmationModal(`確定要刪除 ${name} 的帳號嗎？`, async () => {
                     try {
                         await deleteDoc(doc(db, "users", uid));
-                        // IMPORTANT: Deleting a user from Firebase Auth cannot be done from the client-side for security reasons,
-                        // unless it's the currently signed-in user. This should be handled by a Cloud Function.
-                        // The user will be removed from the list, but their auth entry might remain.
                         fetchAndRenderUsers();
                     } catch (error) {
                         console.error("Error deleting user: ", error);
@@ -483,7 +520,10 @@
                 const actionBtn = confirmationModal.querySelector('#confirm-action-btn');
                 const cancelBtn = confirmationModal.querySelector('#confirm-cancel-btn');
 
-                const close = () => confirmationModal.classList.remove('flex');
+                const close = () => {
+                    confirmationModal.classList.remove('flex');
+                    actionBtn.onclick = null; // Clean up listener
+                };
                 
                 actionBtn.onclick = () => {
                     onConfirm();
@@ -499,13 +539,21 @@
                     jobTitles = (docSnap.exists() && docSnap.data().titles) ? docSnap.data().titles : ['店長', '正職人員'];
                 } catch (error) {
                     console.error("Error loading job titles:", error);
-                    jobTitles = ['店長', '正職人員'];
+                    if (error.code === 'permission-denied') {
+                       showPermissionError();
+                    }
+                    jobTitles = ['讀取失敗']; 
                 }
                 renderAllTitles();
             }
 
             async function saveJobTitles() {
-                await setDoc(settingsDocRef, { titles: jobTitles });
+                try {
+                    await setDoc(settingsDocRef, { titles: jobTitles });
+                } catch (error) {
+                    console.error("Error saving job titles:", error);
+                    alert("儲存職稱失敗，請檢查權限設定。");
+                }
             }
 
             function renderTitleList() {
