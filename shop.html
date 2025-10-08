@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>店家 POS 系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        html, body {
+            overscroll-behavior: none;
+            touch-action: none;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+        }
+        .main-layout {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            max-width: 1280px;
+            margin: 0 auto;
+            background-color: #f3f4f6;
+        }
+        .main-header { height: 80px; flex-shrink: 0; }
+        .main-content { height: calc(100vh - 240px); flex-grow: 1; overflow-y: auto; }
+        .main-footer { height: 160px; flex-shrink: 0; }
+        .nav-button.active { @apply ring-2 ring-red-500 bg-red-50; }
+        .content-panel { display: none; }
+        .content-panel.active { display: block; }
+        .settings-tab {
+            @apply block w-full text-left p-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors;
+        }
+        .settings-tab.active {
+            @apply bg-red-100 text-red-700 font-semibold;
+        }
+        .settings-content-panel {
+            display: none;
+        }
+        .settings-content-panel.active {
+            display: block;
+        }
+        .modal { 
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal.flex { 
+            display: flex;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-800 flex items-center justify-center">
+    <div class="main-layout shadow-2xl">
+        <!-- Header -->
+        <header class="main-header bg-white shadow-md p-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <i class="fas fa-tshirt text-4xl text-red-500"></i>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">智慧洗衣 POS 系統</h1>
+                    <p id="interface-subtitle" class="text-sm text-gray-500">Shop Interface</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                 <span id="user-display" class="text-gray-700 font-semibold">載入中...</span>
+                 <img id="user-avatar" src="https://placehold.co/48x48/e2e8f0/cbd5e0?text=頭像" alt="User Avatar" class="w-12 h-12 rounded-full object-cover ring-2 ring-red-200">
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content p-6">
+            <div id="dashboard-panel" class="content-panel"><h2 class="text-3xl font-bold text-gray-800">儀錶板</h2></div>
+            <div id="clothing-panel" class="content-panel"><h2 class="text-3xl font-bold text-gray-800">衣物類訂單</h2></div>
+            <div id="bedding-panel" class="content-panel"><h2 class="text-3xl font-bold text-gray-800">寢具類訂單</h2></div>
+            <div id="other-panel" class="content-panel"><h2 class="text-3xl font-bold text-gray-800">其他類訂單</h2></div>
+            <div id="store-orders-panel" class="content-panel"><h2 class="text-3xl font-bold text-gray-800">門市訂單管理</h2></div>
+            <div id="online-orders-panel" class="content-panel"><h2 class="text-3xl font-bold text-gray-800">網路訂單管理</h2></div>
+            <div id="members-panel" class="content-panel"><h2 class="text-3xl font-bold text-gray-800">會員管理</h2></div>
+            
+            <div id="settings-panel" class="content-panel h-full">
+                <div class="flex h-full bg-white rounded-lg shadow">
+                    <div class="w-1/5 border-r border-gray-200 p-4">
+                        <h3 class="text-xl font-bold mb-4 text-gray-800">設定項目</h3>
+                        <ul id="settings-nav" class="space-y-2">
+                            <li><a href="#" class="settings-tab active" data-target="settings-clothing-panel">衣物列表</a></li>
+                            <li><a href="#" class="settings-tab" data-target="settings-bedding-panel">寢具列表</a></li>
+                            <li><a href="#" class="settings-tab" data-target="settings-other-panel">其他列表</a></li>
+                        </ul>
+                    </div>
+                    <div class="w-4/5 p-6 overflow-y-auto">
+                        <div id="settings-clothing-panel" class="settings-content-panel active">
+                            <!-- Content for clothing list settings goes here -->
+                        </div>
+                        <div id="settings-bedding-panel" class="settings-content-panel">
+                            <!-- Content for bedding list settings goes here -->
+                        </div>
+                        <div id="settings-other-panel" class="settings-content-panel">
+                             <!-- Content for other list settings goes here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer Navigation -->
+        <footer class="main-footer bg-white border-t-2 border-gray-200 pt-5 px-5">
+            <div id="nav-container" class="flex justify-center items-start space-x-5">
+                <button class="nav-button flex flex-col items-center justify-center w-[120px] h-[120px] bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow" data-target="dashboard-panel"><i class="fas fa-tachometer-alt text-4xl text-red-500 mb-2"></i><span class="font-semibold text-gray-700">儀錶板</span></button>
+                <button class="nav-button flex flex-col items-center justify-center w-[120px] h-[120px] bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow" data-target="clothing-panel"><i class="fas fa-tshirt text-4xl text-red-500 mb-2"></i><span class="font-semibold text-gray-700">衣物類</span></button>
+                <button class="nav-button flex flex-col items-center justify-center w-[120px] h-[120px] bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow" data-target="bedding-panel"><i class="fas fa-bed text-4xl text-red-500 mb-2"></i><span class="font-semibold text-gray-700">寢具類</span></button>
+                <button class="nav-button flex flex-col items-center justify-center w-[120px] h-[120px] bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow" data-target="other-panel"><i class="fas fa-box-open text-4xl text-red-500 mb-2"></i><span class="font-semibold text-gray-700">其他類</span></button>
+                <button class="nav-button flex flex-col items-center justify-center w-[120px] h-[120px] bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow" data-target="store-orders-panel"><i class="fas fa-store text-4xl text-red-500 mb-2"></i><span class="font-semibold text-gray-700">門市訂單</span></button>
+                <button class="nav-button flex flex-col items-center justify-center w-[120px] h-[120px] bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow" data-target="online-orders-panel"><i class="fas fa-globe text-4xl text-red-500 mb-2"></i><span class="font-semibold text-gray-700">網路訂單</span></button>
+                <button class="nav-button flex flex-col items-center justify-center w-[120px] h-[120px] bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow" data-target="members-panel"><i class="fas fa-users text-4xl text-red-500 mb-2"></i><span class="font-semibold text-gray-700">會員管理</span></button>
+                <button class="nav-button flex flex-col items-center justify-center w-[120px] h-[120px] bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow" data-target="settings-panel"><i class="fas fa-cog text-4xl text-red-500 mb-2"></i><span class="font-semibold text-gray-700">設定</span></button>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- Item Modal -->
+    <div id="item-modal" class="modal fixed inset-0 bg-gray-600 bg-opacity-50 items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 id="item-modal-title" class="text-xl font-semibold">新增品項</h3>
+                <button id="close-item-modal-btn" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                <form id="item-form" class="space-y-4">
+                    <input type="hidden" name="id">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">產品名稱</label>
+                            <input name="name" type="text" class="w-full p-2 border border-gray-300 rounded-md shadow-sm" required>
+                        </div>
+                        <div>
+                             <label class="block text-sm font-medium text-gray-700 mb-1">編號</label>
+                            <input name="code" type="text" class="w-full p-2 border border-gray-300 rounded-md shadow-sm bg-gray-100" readonly>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <img id="item-image-preview" src="https://placehold.co/128x128/e2e8f0/cbd5e0?text=照片" alt="Image Preview" class="w-32 h-32 rounded-md object-cover bg-gray-200">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">產品照</label>
+                            <input name="image" id="item-image-input" type="file" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"/>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">產品說明</label>
+                        <textarea name="description" rows="2" class="w-full p-2 border border-gray-300 rounded-md shadow-sm"></textarea>
+                    </div>
+                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                             <label class="block text-sm font-medium text-gray-700 mb-1">分級</label>
+                             <select name="grade" class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                                 <option value="一般">一般</option>
+                                 <option value="高級">高級</option>
+                                 <option value="最高級">最高級</option>
+                             </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">原價</label>
+                            <input name="originalPrice" type="number" class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">特價</label>
+                            <input name="specialPrice" type="number" class="w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">備註</label>
+                        <textarea name="remarks" rows="2" class="w-full p-2 border border-gray-300 rounded-md shadow-sm"></textarea>
+                    </div>
+                    <div class="text-right pt-4">
+                        <button type="submit" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700 transition-colors">儲存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Role-based Permission Control ---
+            const userRole = sessionStorage.getItem('userRole');
+            const userName = sessionStorage.getItem('userName');
+            const userAvatar = sessionStorage.getItem('userAvatarUrl');
+            
+            const roleDisplayNames = {
+                'shop-manager': { name: '主管', subtitle: 'Shop Manager Interface' },
+                'shop-staff': { name: '員工', subtitle: 'Shop Staff Interface' },
+                'shop-auto': { name: '自助', subtitle: 'Self-Service Interface' }
+            };
+
+            const roleInfo = roleDisplayNames[userRole] || { name: '店家', subtitle: 'Shop Interface' };
+            if (userName) document.getElementById('user-display').textContent = `${roleInfo.name}: ${userName}`;
+            if (userAvatar) document.getElementById('user-avatar').src = userAvatar;
+            document.getElementById('interface-subtitle').textContent = roleInfo.subtitle;
+
+            const permissions = {
+                'shop-manager': ['dashboard-panel', 'clothing-panel', 'bedding-panel', 'other-panel', 'store-orders-panel', 'online-orders-panel', 'members-panel', 'settings-panel'],
+                'shop-staff': ['dashboard-panel', 'clothing-panel', 'bedding-panel', 'other-panel', 'store-orders-panel', 'online-orders-panel', 'members-panel'],
+                'shop-auto': ['clothing-panel', 'bedding-panel', 'other-panel']
+            };
+
+            const visibleButtons = permissions[userRole] || [];
+            const navButtons = document.querySelectorAll('.nav-button');
+            const contentPanels = document.querySelectorAll('.content-panel');
+            let firstVisibleButton = null;
+
+            navButtons.forEach(button => {
+                const target = button.dataset.target;
+                if (visibleButtons.includes(target)) {
+                    button.style.display = 'flex';
+                    if (!firstVisibleButton) {
+                        firstVisibleButton = button;
+                    }
+                } else {
+                    button.style.display = 'none';
+                }
+            });
+            
+            // Set initial active panel based on role
+            if (firstVisibleButton) {
+                navButtons.forEach(btn => btn.classList.remove('active'));
+                contentPanels.forEach(panel => panel.classList.remove('active'));
+
+                firstVisibleButton.classList.add('active');
+                const firstVisiblePanelId = firstVisibleButton.dataset.target;
+                document.getElementById(firstVisiblePanelId).classList.add('active');
+            }
+
+
+            // --- Standard Page Logic ---
+            const navContainer = document.getElementById('nav-container');
+            navContainer.addEventListener('click', (e) => {
+                const button = e.target.closest('.nav-button');
+                if (!button) return;
+                const targetPanelId = button.dataset.target;
+                document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                contentPanels.forEach(panel => panel.classList.toggle('active', panel.id === targetPanelId));
+            });
+            
+            const settingsNav = document.getElementById('settings-nav');
+            const settingsContentPanels = document.querySelectorAll('.settings-content-panel');
+            settingsNav.addEventListener('click', (e) => {
+                e.preventDefault();
+                const tab = e.target.closest('.settings-tab');
+                if (!tab) return;
+                const targetPanelId = tab.dataset.target;
+                document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                settingsContentPanels.forEach(panel => panel.classList.toggle('active', panel.id === targetPanelId));
+            });
+
+            const itemModal = document.getElementById('item-modal');
+            const itemModalTitle = document.getElementById('item-modal-title');
+            const closeItemModalBtn = document.getElementById('close-item-modal-btn');
+            const itemForm = document.getElementById('item-form');
+            const itemImageInput = document.getElementById('item-image-input');
+            const itemImagePreview = document.getElementById('item-image-preview');
+
+            const itemPanelConfig = {
+                'settings-clothing-panel': { title: '衣物', prefix: 'A', data: [] },
+                'settings-bedding-panel': { title: '寢具', prefix: 'B', data: [] },
+                'settings-other-panel': { title: '其他', prefix: 'Z', data: [] }
+            };
+
+            function generateItemTable(panelId) {
+                const config = itemPanelConfig[panelId];
+                const panel = document.getElementById(panelId);
+                panel.innerHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-bold text-gray-800">${config.title}列表設定</h2>
+                        <button class="add-item-btn bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600" data-panel-id="${panelId}">
+                            <i class="fas fa-plus mr-2"></i>新增品項
+                        </button>
+                    </div>
+                    <div class="bg-white rounded-lg shadow overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-50 text-xs text-gray-700 uppercase">
+                                <tr>
+                                    <th class="p-3">編號</th>
+                                    <th class="p-3">產品照</th>
+                                    <th class="p-3">產品名稱</th>
+                                    <th class="p-3">產品說明</th>
+                                    <th class="p-3">分級</th>
+                                    <th class="p-3">原價</th>
+                                    <th class="p-3">特價</th>
+                                    <th class="p-3">備註</th>
+                                    <th class="p-3">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b">
+                                    <td class="p-3 font-medium">${config.prefix}001</td>
+                                    <td class="p-3"><img src="https://placehold.co/64x64/e2e8f0/cbd5e0?text=照片" class="w-16 h-16 object-cover rounded-md"></td>
+                                    <td class="p-3">範例產品</td>
+                                    <td class="p-3">這是一個產品說明範例。</td>
+                                    <td class="p-3"><span class="bg-blue-100 text-blue-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded">高級</span></td>
+                                    <td class="p-3">150</td>
+                                    <td class="p-3 text-red-600 font-bold">120</td>
+                                    <td class="p-3">無</td>
+                                    <td class="p-3 space-x-2">
+                                        <button class="text-gray-400 hover:text-blue-500"><i class="fas fa-edit"></i></button>
+                                        <button class="text-gray-400 hover:text-red-500"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>`;
+            }
+
+            Object.keys(itemPanelConfig).forEach(generateItemTable);
+
+            document.addEventListener('click', (e) => {
+                if(e.target.closest('.add-item-btn')) {
+                    const btn = e.target.closest('.add-item-btn');
+                    const panelId = btn.dataset.panelId;
+                    const config = itemPanelConfig[panelId];
+                    itemModalTitle.textContent = `新增${config.title}品項`;
+                    itemForm.reset();
+                    itemImagePreview.src = 'https://placehold.co/128x128/e2e8f0/cbd5e0?text=照片';
+                    const newCode = `${config.prefix}${(config.data.length + 1).toString().padStart(3, '0')}`;
+                    itemForm.querySelector('input[name="code"]').value = newCode;
+                    itemModal.classList.add('flex');
+                }
+            });
+
+            closeItemModalBtn.addEventListener('click', () => itemModal.classList.remove('flex'));
+            itemImageInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if(file) itemImagePreview.src = URL.createObjectURL(file);
+            });
+        });
+    </script>
+</body>
+</html>
